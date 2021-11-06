@@ -37,6 +37,9 @@ class joint_pub:
         joint4=Float64()
         joint4.data= j4
 
+        joint_angles = Float64MultiArray()
+        joint_angles.data = np.array([j2, j3, j4])
+
         robot_joint1_pub.publish(joint2)
         robot_joint2_pub.publish(joint3)
         robot_joint3_pub.publish(joint4)
