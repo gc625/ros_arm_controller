@@ -22,6 +22,8 @@ class image_converter:
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw",Image,self.callback2)
     # initialize the bridge between openCV and ROS
+    self.time = rospy.Subscriber("joint_publisher/time")
+
     self.bridge = CvBridge()
 
 
@@ -33,7 +35,7 @@ class image_converter:
     except CvBridgeError as e:
       print(e)
     # Uncomment if you want to save the image
-    cv2.imwrite('image_copy2.png', self.cv_image2)
+    cv2.imwrite('image_copy'+ str(self.time) + '.png', self.cv_image2)
     im2=cv2.imshow('window2', self.cv_image2)
     cv2.waitKey(1)
 
