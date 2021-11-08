@@ -34,19 +34,22 @@ class joint_pub:
         j3 = np.pi * 0.5 * np.sin(cur_time * np.pi / 20) 
         j4 = np.pi * 0.5 * np.sin(cur_time * np.pi / 18) 
         
-
+	
         joint2=Float64()
         joint2.data= j2
         joint3=Float64()
         joint3.data= j3
         joint4=Float64()
         joint4.data= j4
-
+        runtime = Float64()
+        runtime.data = cur_time
+	
         joint_angles = Float64MultiArray()
         joint_angles.data = np.array([j2, j3, j4])
-        bag.write('j2', j2)
-        bag.write('j3', j3)
-        bag.write('j4', j4)
+        bag.write('joint2',joint2)
+        bag.write('joint3',joint3)
+        bag.write('joint4',joint4)
+        bag.write('time', runtime)
         robot_joint1_pub.publish(joint2)
         robot_joint2_pub.publish(joint3)
         robot_joint3_pub.publish(joint4)
