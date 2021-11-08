@@ -22,14 +22,22 @@ class joint_pub:
     # initialize a publisher for end effector target positions
     target_pos_pub = rospy.Publisher("target_pos", Float64MultiArray, queue_size=10)
     joint_time = rospy.Publisher("time", Float64, queue_size=10)
-    t0 = rospy.get_time()
-
 
     bag = rosbag.Bag('test.bag', 'w')
 
+    t0 = rospy.get_time()	
+    
+    isFirst = True
 
     while not rospy.is_shutdown():
-        cur_time = np.array([rospy.get_time()]) - t0
+        if isFirst:
+            t0 = rospy.get_time() - t0
+            isFirst = False
+        print(t0)   
+        
+        rospy.get_time()
+        cur_time = rospy.get_time() - t0
+        print(cur_time)
         #y_d = float(6 + np.absolute(1.5* np.sin(cur_time * np.pi/100)))
         j2 = np.pi * 0.5 * np.sin(cur_time * np.pi / 15)
         j3 = np.pi * 0.5 * np.sin(cur_time * np.pi / 20) 
@@ -57,7 +65,9 @@ class joint_pub:
         robot_joint2_pub.publish(joint3)
         robot_joint3_pub.publish(joint4)
         rate.sleep()
-
+        #if (cur_time >= 10):
+         #   rospy.signal_shutdown("time passed")
+	
     bag.close()
 # run the code if the node is called
 if __name__ == '__main__':
