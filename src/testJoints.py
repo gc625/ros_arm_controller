@@ -4,6 +4,7 @@ import roslib
 import sys
 import rospy
 import cv2
+import rosbag
 import numpy as np
 from std_msgs.msg import Float64MultiArray, Float64
 
@@ -20,8 +21,12 @@ class joint_pub:
     rate = rospy.Rate(50)  # 50hz
     # initialize a publisher for end effector target positions
     target_pos_pub = rospy.Publisher("target_pos", Float64MultiArray, queue_size=10)
-
     t0 = rospy.get_time()
+
+
+    bag = rosbag.Bag('test.bag', 'w')
+
+
     while not rospy.is_shutdown():
         cur_time = np.array([rospy.get_time()]) - t0
         #y_d = float(6 + np.absolute(1.5* np.sin(cur_time * np.pi/100)))
@@ -39,13 +44,15 @@ class joint_pub:
 
         joint_angles = Float64MultiArray()
         joint_angles.data = np.array([j2, j3, j4])
-
+        bag.write('j2', j2)
+        bag.write('j3', j3)
+        bag.write('j4', j4)
         robot_joint1_pub.publish(joint2)
         robot_joint2_pub.publish(joint3)
         robot_joint3_pub.publish(joint4)
         rate.sleep()
 
-
+    bag.close()
 # run the code if the node is called
 if __name__ == '__main__':
     try:
