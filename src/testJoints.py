@@ -17,7 +17,7 @@ class joint_pub:
     robot_joint1_pub = rospy.Publisher("/robot/joint1_position_controller/command", Float64, queue_size=10)
     robot_joint2_pub = rospy.Publisher("/robot/joint2_position_controller/command", Float64, queue_size=10)
     robot_joint3_pub = rospy.Publisher("/robot/joint3_position_controller/command", Float64, queue_size=10)
-    robot_joint3_pub = rospy.Publisher("/robot/joint4_position_controller/command", Float64, queue_size=10)
+    robot_joint4_pub = rospy.Publisher("/robot/joint4_position_controller/command", Float64, queue_size=10)
     rate = rospy.Rate(50)  # 50hz
     # initialize a publisher for end effector target positions
     target_pos_pub = rospy.Publisher("target_pos", Float64MultiArray, queue_size=10)
