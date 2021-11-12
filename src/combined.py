@@ -53,7 +53,9 @@ class image_converter:
         image = np.concatenate((self.cv_image1, self.cv_image2), axis=1)
         im = cv2.imshow('camera1 and camera 2', image)
         cv2.waitKey(1)
-        cv2.imwrite('camera1 and camera 2.png', self.cv_image2)
+        cv2.imwrite('camera1.jpg', self.cv_image1)
+        cv2.imwrite('camera2.jpg', self.cv_image2)
+        cv2.imwrite('camera1 and camera 2.jpg', self.cv_image2)
         # Publish the results
         try:
             self.image_pub2.publish(self.bridge.cv2_to_imgmsg(self.cv_image2, "bgr8"))
