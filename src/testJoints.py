@@ -61,9 +61,9 @@ class joint_pub:
         bag.write('time', runtime)
         
         joint_time.publish(runtime)
-        robot_joint1_pub.publish(joint2)
-        robot_joint2_pub.publish(joint3)
-        robot_joint3_pub.publish(joint4)
+        robot_joint2_pub.publish(joint2)
+        robot_joint3_pub.publish(joint3)
+        robot_joint4_pub.publish(joint4)
         rate.sleep()
         #if (cur_time >= 10):
          #   rospy.signal_shutdown("time passed")
