@@ -4,7 +4,6 @@ import roslib
 import sys
 import rospy
 import cv2
-<<<<<<< HEAD
 import rosbag
 import numpy as np
 from std_msgs.msg import Float64MultiArray, Float64
