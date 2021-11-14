@@ -4,7 +4,6 @@ import roslib
 import sys
 import rospy
 import cv2
-<<<<<<< HEAD
 import rosbag
 import numpy as np
 from std_msgs.msg import Float64MultiArray, Float64
@@ -25,11 +24,16 @@ class joint_pub:
     joint_time = rospy.Publisher("time", Float64, queue_size=10)
 
     bag = rosbag.Bag('test.bag', 'w')
-    rospy.get_time()
+
     t0 = rospy.get_time()	
     
+    isFirst = True
 
     while not rospy.is_shutdown():
+        if isFirst:
+            t0 = rospy.get_time() - t0
+            isFirst = False
+        print(t0)   
         
         rospy.get_time()
         cur_time = rospy.get_time() - t0
@@ -57,11 +61,9 @@ class joint_pub:
         bag.write('time', runtime)
         
         joint_time.publish(runtime)
-
         robot_joint2_pub.publish(joint2)
         robot_joint3_pub.publish(joint3)
         robot_joint4_pub.publish(joint4)
-
         rate.sleep()
         #if (cur_time >= 10):
          #   rospy.signal_shutdown("time passed")

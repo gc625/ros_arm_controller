@@ -19,6 +19,7 @@ class image_converter:
     rospy.init_node('image_processing', anonymous=True)
     # initialize a publisher to send images from camera2 to a topic named image_topic2
     self.image_pub2 = rospy.Publisher("image_topic2",Image, queue_size = 1)
+<<<<<<< HEAD
     
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw",Image,self.callback2)
@@ -33,24 +34,46 @@ class image_converter:
   # Recieve data, process it, and publish
   def callback2(self,data):
     r= rospy.Rate(50)
+=======
+    # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
+    self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw",Image,self.callback2)
+    # initialize the bridge between openCV and ROS
+    self.time = rospy.Subscriber("joint_publisher/time")
+
+    self.bridge = CvBridge()
+
+
+  # Recieve data, process it, and publish
+  def callback2(self,data):
+>>>>>>> 373dee8ed664e5f8b2a877970badf86493cc67ad
     # Recieve the image
     try:
       self.cv_image2 = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
     # Uncomment if you want to save the image
+<<<<<<< HEAD
     #print(self.cur_time)
     print(rospy.get_time())
     cv2.imwrite('image_copy'+ str(rospy.get_time()) + '.png', self.cv_image2)
     #im2=cv2.imshow('window2', self.cv_image2)
     #cv2.waitKey(1)
     
+=======
+    cv2.imwrite('image_copy'+ str(self.time) + '.png', self.cv_image2)
+    im2=cv2.imshow('window2', self.cv_image2)
+    cv2.waitKey(1)
+
+>>>>>>> 373dee8ed664e5f8b2a877970badf86493cc67ad
     # Publish the results
     try: 
       self.image_pub2.publish(self.bridge.cv2_to_imgmsg(self.cv_image2, "bgr8"))
     except CvBridgeError as e:
       print(e)
+<<<<<<< HEAD
     r.sleep()
+=======
+>>>>>>> 373dee8ed664e5f8b2a877970badf86493cc67ad
 
 # call the class
 def main(args):

@@ -20,7 +20,10 @@ def target_publisher():
     t0 = rospy.get_time()
     while not rospy.is_shutdown():
         cur_time = np.array([rospy.get_time()]) - t0
+<<<<<<< HEAD
         print("bruh")
+=======
+>>>>>>> 373dee8ed664e5f8b2a877970badf86493cc67ad
         #y_d = float(6 + np.absolute(1.5* np.sin(cur_time * np.pi/100)))
         tx = 3.0 * np.cos(cur_time * np.pi / 20)
         ty = 4.0 * np.sin(cur_time * np.pi / 14) + 0.5
