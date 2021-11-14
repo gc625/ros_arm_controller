@@ -17,8 +17,14 @@ class image_converter:
     # Defines publisher and subscriber
     def __init__(self):
 
-        DIR = 'images'
-        self.picDIR = 'images/video'+str(len([name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))])+1)
+        
+        DIR = os.path.abspath(os.getcwd())
+        DIR = os.path.join(DIR, "src/ivr_assignment/src/images")
+     
+        
+        num = len(os.listdir(DIR))+1
+        
+        self.picDIR = DIR+ '/video'+str(num)
 #        now = datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
 #        self.picDIR = 'images/video' + str(now)
         os.mkdir(self.picDIR) 
@@ -75,11 +81,9 @@ class image_converter:
         cv2.imwrite(self.c2DIR+'/'+str(cur_time)+'.jpg', self.cv_image2)
         #cv2.imwrite('camera1 and camera 2.jpg', self.cv_image2)
 
-        im = cv2.imshow('camera1 and camera 2', image)
-        cv2.waitKey(1)
         cv2.imwrite('camera1.jpg', self.cv_image1)
         cv2.imwrite('camera2.jpg', self.cv_image2)
-        cv2.imwrite('camera1 and camera 2.jpg', self.cv_image2)
+#        cv2.imwrite('camera1 and camera 2.jpg', self.cv_image2)
 
         # Publish the results
         try:
