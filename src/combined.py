@@ -5,11 +5,8 @@ import sys
 import rospy
 import cv2
 import numpy as np
-<<<<<<< HEAD
 import os,os.path
 from datetime import datetime
-=======
->>>>>>> 373dee8ed664e5f8b2a877970badf86493cc67ad
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float64MultiArray, Float64
@@ -19,7 +16,7 @@ class image_converter:
 
     # Defines publisher and subscriber
     def __init__(self):
-<<<<<<< HEAD
+
         DIR = 'images'
         self.picDIR = 'images/video'+str(len([name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))])+1)
 #        now = datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
@@ -29,8 +26,7 @@ class image_converter:
         self.c2DIR = os.path.join(self.picDIR,"camera2")
         os.mkdir(self.c1DIR)
         os.mkdir(self.c2DIR)
-=======
->>>>>>> 373dee8ed664e5f8b2a877970badf86493cc67ad
+
         # initialize the node named image_processing
         rospy.init_node('image_processing', anonymous=True)
         # initialize a publisher to send images from camera1 to a topic named image_topic1
@@ -43,14 +39,7 @@ class image_converter:
         self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw", Image, self.callback2)
         # initialize the bridge between openCV and ROS
         self.bridge = CvBridge()
-<<<<<<< HEAD
-        
 
-        
-
-        
-=======
->>>>>>> 373dee8ed664e5f8b2a877970badf86493cc67ad
 
 
     def callback1(self, data):
@@ -76,7 +65,7 @@ class image_converter:
             print(e)
 
         image = np.concatenate((self.cv_image1, self.cv_image2), axis=1)
-<<<<<<< HEAD
+
 #        im = cv2.imshow('camera1 and camera 2', image)
 #        cv2.waitKey(1)
         
@@ -85,13 +74,13 @@ class image_converter:
         cv2.imwrite(self.c1DIR+'/'+str(cur_time)+'.jpg', self.cv_image1)
         cv2.imwrite(self.c2DIR+'/'+str(cur_time)+'.jpg', self.cv_image2)
         #cv2.imwrite('camera1 and camera 2.jpg', self.cv_image2)
-=======
+
         im = cv2.imshow('camera1 and camera 2', image)
         cv2.waitKey(1)
         cv2.imwrite('camera1.jpg', self.cv_image1)
         cv2.imwrite('camera2.jpg', self.cv_image2)
         cv2.imwrite('camera1 and camera 2.jpg', self.cv_image2)
->>>>>>> 373dee8ed664e5f8b2a877970badf86493cc67ad
+
         # Publish the results
         try:
             self.image_pub2.publish(self.bridge.cv2_to_imgmsg(self.cv_image2, "bgr8"))
