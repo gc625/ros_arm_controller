@@ -5,6 +5,7 @@ import sys
 import rospy
 import cv2
 import numpy as np
+from sympy import *
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float64
@@ -73,8 +74,47 @@ class image_converter:
       cx = int(M['m10'] / M['m00'])
       cy = int(M['m01'] / M['m00'])
       centers.append(np.array([cx,cy]))
+    newX = centers[0][0]
+    newY = centers[0][1]
+
+    for i in range(len(centers)):
+      centers[i] = np.array([centers[i][0] - newX, -1 * (centers[i][1] - newY)])
     return centers 
 
+  def combine(self,xz,yz):
+    # averages z coord for now
+    combined = []
+    
+    for i in range(len(xz)):
+      
+      combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+xz[i][1])/2)))
+#      print(xz[i],yz[i])    	
+	
+    return combined
+
+  def calcNormVecs(self,centers):
+    dist = []
+    vecs = []
+    for i in range(len(centers) - 1):
+        vecs.append((centers[i + 1] - centers[i]) / np.linalg.norm(centers[i + 1] - centers[i]))
+        # vecs.append((nodeCoords[i + 1] - nodeCoords[i]) / np.linalg.norm(nodeCoords[i + 1] - nodeCoords[i]))
+#        dist.append(np.linalg.norm(centers[i+1]-centers[i]))
+
+    return vecs
+
+  def angles_rotMat(self,prev,cur):
+    
+    
+    a,b,c = prev[0],prev[1],prev[2]
+
+    x, y = symbols('x, y')
+    eq1 = Eq(cos(y)*a+sin(y)*sin(x)*b+sin(y)*cos(x)*c, cur[0])
+    eq2 = Eq(b*cos(x)-c*sin(x), cur[1])
+
+
+    sol = nsolve([eq1, eq2], [x, y],[1,1])
+    
+    return sol
   def callback2(self,data):
     # Recieve the image
     try:
@@ -90,21 +130,37 @@ class image_converter:
 
     centersYZ = self.detect_centers(self.cv_image1)
     centersXZ = self.detect_centers(self.cv_image2)
+    centers = self.combine(centersXZ,centersYZ)
+#    print(centersYZ, centersXZ)
+#    print(centers)
+    normVecs = self.calcNormVecs(centers)
+    
+#    print(self.angles_rotMat([0,0,1],normVecs[1]))
+    j2,j3 = self.angles_rotMat([0,0,1],normVecs[1])
+#    _,j4 = self.angles_rotMat(normVecs[1],normVecs[2])
 
+#    print(j2,j3)
 
-    print("YZ",centersYZ)
-    print("XZ",centersXZ)
+    # print("YZ",centersYZ)
+    # print("XZ",centersXZ)
 
 
     # cv2.imshow('window', cv_image)
     # cv2.waitKey(3)
 
-    self.joint_angle_2 = Float64()
-    self.joint_angle_3 = Float64()
-    self.joint_angle_4 = Float64()
-    # self.joint_angle_2 = # TODO
-    # self.joint_angle_3 = # TODO
-    # self.joint_angle_4 = # TODO
+    self.joint2 = Float64()
+    self.joint3 = Float64()
+    self.joint4 = Float64()
+    self.joint2.data = j2 
+    self.joint3.data = j3
+#    self.joint4.data = j4
+    
+    self.joint_angle_2.publish(self.joint2)
+    self.joint_angle_3.publish(self.joint3)
+#    self.joint_angle_4.publish(joint4)
+    
+    
+
 
     # Publish the results
     try:
