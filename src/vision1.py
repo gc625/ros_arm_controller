@@ -44,6 +44,7 @@ class image_converter:
     '''
 
   def callback1(self, data):
+    print("in c1")
     # Recieve the image
     try:
       self.cv_image1 = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -58,37 +59,57 @@ class image_converter:
 
   def detect_centers(self,image):
     # Mask each joint
-    rMask = cv2.inRange(image, (0, 0, 100), (0, 0, 255))
-    gMask = cv2.inRange(image, (0, 100, 0), (0, 255, 0))
-    bMask = cv2.inRange(image, (100, 0, 0), (255, 0, 0))
-    yMask = cv2.inRange(image, (0, 100, 100), (0, 255, 255))
+#    rMask = cv2.inRange(image, (0, 0, 100), (0, 0, 255))
+#    gMask = cv2.inRange(image, (0, 100, 0), (0, 255, 0))
+#    bMask = cv2.inRange(image, (100, 0, 0), (255, 0, 0))
+#    yMask = cv2.inRange(image, (0, 100, 100), (0, 255, 255))
 
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    yMask = cv2.inRange(hsv, (15, 0, 0), (36, 255, 255))
+    bMask = cv2.inRange(hsv, (110, 50, 50), (130, 255, 255))
+    gMask = cv2.inRange(hsv, (36, 0, 0), (70, 255, 255))
+    rMask = cv2.inRange(hsv, (0, 70, 50), (10, 255, 255))
     masks = [gMask,yMask,bMask,rMask]
     kernel = np.ones((5, 5), np.uint8)
 
     centers = []
     # Calculate the center for each joint
-    for mask in masks:
+    not_here= [False,False,False,False]
+    for i,mask in enumerate(masks):
+      
       mask = cv2.dilate(mask, kernel, iterations=3)
-      M = cv2.moments(mask)
-      cx = int(M['m10'] / M['m00'])
-      cy = int(M['m01'] / M['m00'])
-      centers.append(np.array([cx,cy]))
+      if(np.sum(mask) <= 0):
+        not_here[i] = True
+        centers.append(np.array([0,0]))
+      else:
+        M = cv2.moments(mask)
+        
+        cx = int(M['m10'] / M['m00'])
+        cy = int(M['m01'] / M['m00'])
+        centers.append(np.array([cx,cy]))
     newX = centers[0][0]
     newY = centers[0][1]
 
     for i in range(len(centers)):
       centers[i] = np.array([centers[i][0] - newX, -1 * (centers[i][1] - newY)])
-    return centers 
+    return centers,not_here 
 
-  def combine(self,xz,yz):
+  def combine(self,yz,not_here1,xz,not_here2):
     # averages z coord for now
     combined = []
-    
-    for i in range(len(xz)):
+    nh1 = not_here1
+    nh2 = not_here2
+    for i in range(len(yz)):
+      if(nh1[i] == True): # if a center is missing from cam 1  
+        combined.append(np.array((xz[i][0],0,yz[i][1])))
       
-      combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+xz[i][1])/2)))
+      elif(nh2[i] == True): # if center is missing from cam 2, 
+        combined.append(np.array((0,yz[i][0],xz[i][1])))
 #      print(xz[i],yz[i])    	
+
+      else:
+        combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+yz[i][1])/2)))
 	
     return combined
 
@@ -96,7 +117,8 @@ class image_converter:
     dist = []
     vecs = []
     for i in range(len(centers) - 1):
-        vecs.append((centers[i + 1] - centers[i]) / np.linalg.norm(centers[i + 1] - centers[i]))
+      
+      vecs.append((centers[i + 1] - centers[i]) / np.linalg.norm(centers[i + 1] - centers[i]))
         # vecs.append((nodeCoords[i + 1] - nodeCoords[i]) / np.linalg.norm(nodeCoords[i + 1] - nodeCoords[i]))
 #        dist.append(np.linalg.norm(centers[i+1]-centers[i]))
 
@@ -113,8 +135,17 @@ class image_converter:
 
 
     sol = nsolve([eq1, eq2], [x, y],[1,1])
+    sol = [np.array(sol).astype(np.float64)[0][0],np.array(sol).astype(np.float64)[1][0]]
     
-    return sol
+    for i in range(len(sol)):
+      if sol[i]>2:
+        sol[i] = 2.0
+        print("OVERFLOW+")
+      elif sol[i]< -2 :
+        sol[i] = -2.0   
+        print("OVERFLOW-")
+    
+    return round(sol[0],5),round(sol[1],5)
   def callback2(self,data):
     # Recieve the image
     try:
@@ -127,10 +158,10 @@ class image_converter:
 
     # Uncomment if you want to save the image
     #cv2.imwrite('image_copy.png', cv_image)
-
-    centersYZ = self.detect_centers(self.cv_image1)
-    centersXZ = self.detect_centers(self.cv_image2)
-    centers = self.combine(centersXZ,centersYZ)
+    centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
+    centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
+    
+    centers = self.combine(centersYZ,not_here_1,centersXZ,not_here_2)
 #    print(centersYZ, centersXZ)
 #    print(centers)
     normVecs = self.calcNormVecs(centers)
@@ -139,7 +170,7 @@ class image_converter:
     j2,j3 = self.angles_rotMat([0,0,1],normVecs[1])
 #    _,j4 = self.angles_rotMat(normVecs[1],normVecs[2])
 
-#    print(j2,j3)
+    print(j2,j3)
 
     # print("YZ",centersYZ)
     # print("XZ",centersXZ)
@@ -172,6 +203,7 @@ class image_converter:
 
 
 def main(args):
+  print("in")
   ic = image_converter()
   try:
     rospy.spin()
