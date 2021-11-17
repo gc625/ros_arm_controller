@@ -30,14 +30,14 @@ class joint_pub:
     
     
     while not rospy.is_shutdown():
-      for i in ((x/50) for x in range(int(0*50)+1, int(120*50)+1)):
+        
         rospy.get_time()
         cur_time = rospy.get_time() - t0
-        print(cur_time,":",i)
+        print(cur_time)
         #y_d = float(6 + np.absolute(1.5* np.sin(cur_time * np.pi/100)))
-        j2 = np.pi * 0.5 * np.sin(i * np.pi / 15)
-        j3 = np.pi * 0.5 * np.sin(i * np.pi / 20) 
-        j4 = np.pi * 0.5 * np.sin(i * np.pi / 18) 
+        j2 = np.pi * 0.5 * np.sin(cur_time * np.pi / 15)
+        j3 = np.pi * 0.5 * np.sin(cur_time * np.pi / 20) 
+        j4 = np.pi * 0.5 * np.sin(cur_time * np.pi / 18) 
         
 	
         joint2=Float64()
