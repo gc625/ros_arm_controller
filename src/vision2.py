@@ -43,9 +43,9 @@ class image_converter:
     representing the center of the green,yellow, blue,red joints
     in that order. 
     '''
-    self.prev= []
-    self.j2 = 0
-    self.j3 = 0
+    self.prevX = 0.1
+    self.prevCenters = [np.array([0,0,0]),np.array([0,0,0]),np.array([0,0,0])]
+    self.sign = 1 
     
 
   def callback1(self, data):
@@ -54,7 +54,7 @@ class image_converter:
     try:
     
       self.cv_image1 = self.bridge.imgmsg_to_cv2(data, "bgr8")
-      print(type(self.cv_image1))
+#      print(type(self.cv_image1))
     except CvBridgeError as e:
       print(e)
 
@@ -101,9 +101,9 @@ class image_converter:
     combined = []
     for i in range(len(yz)):
       if(not_here1[i] == True): # if a center is missing from cam 1  
-        combined.append(np.array((xz[i][0],0,yz[i][1])))
+        combined.append(np.array((xz[i][0],self.prevCenters[i][1],yz[i][1])))
       elif(not_here2[i] == True): # if center is missing from cam 2, 
-        combined.append(np.array((0,yz[i][0],xz[i][1])))
+        combined.append(np.array((self.prevCenters[i][0],yz[i][0],xz[i][1])))
       else:
         combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+yz[i][1])/2)))
 	
@@ -117,37 +117,52 @@ class image_converter:
 
 
     return vecs
+  def bound(self,num):
+    if num > 1: return 1
+    elif num <-1: return -1
+    else: return num
 
-  def angles_rotMat(self,prev,cur):
+  def angles_rotMat(self,prev,cur,hasMissing):
 #    print("in here, ")
+
+    sol = [0,0]
     a,b,c = prev[0],prev[1],prev[2]
-    A,B,C = cur[0],cur[1],cur[2]
-    x = np.arccos(C)
-    z = np.arcsin(A/np.sin(x))
+    A,B,C = cur[0],cur[1],self.bound(cur[2])
+    
+    if hasMissing:
+      x = self.prevX
+    else:
+      x = self.sign*np.arccos(C)
+    sol[0] = x 
+#    z = np.arcsin(A/np.sin(x))
+    
+    if self.sign > 0 and x < 0.08 :
+      print(self.prevX, x)
+      if (np.sign(self.prevX) == np.sign(x)):   
+        self.sign *= -1
+       
+    elif self.sign < 0 and x > -0.08 :
+      print(self.prevX, x)
+      if (np.sign(self.prevX) == np.sign(x)): 
+        self.sign *= -1
+        
+       
+    if(x>=0):
+      z = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
+    else:     
+      z = np.arcsin(self.bound(A/np.sin(-np.arccos(C))))
+    sol[1] = z
     #
-    return x,z
-      
-#     else:
-#       a,b,c = prev[0],prev[1],prev[2]
-      
-#       x, y = symbols('x, y')
-#       eq1 = Eq(cos(y)*a+sin(y)*sin(x)*b+sin(y)*cos(x)*c, cur[0])
-#       eq2 = Eq(b*cos(x)-c*sin(x), cur[1])
+#    for i in range(len(sol)):
+#      if sol[i]>2:
+#        sol[i] = 2.0
+#        print("OVERFLOW+")
+#      elif sol[i]< -2 :
+#        sol[i] = -2.0   
+#        print("OVERFLOW-")
+    self.prevX = sol[0]
+    return round(sol[0],5),round(sol[1],5)
 
-
-#       sol = nsolve([eq1, eq2], [x, y],[1,1])
-#       sol = [np.array(sol).astype(np.float64)[0][0],np.array(sol).astype(np.float64)[1][0]]
-    
-    
-#       for i in range(len(sol)):
-#         if sol[i]>2:
-#           sol[i] = 2.0
-#           print("OVERFLOW+")
-#         elif sol[i]< -2 :
-#           sol[i] = -2.0   
-#           print("OVERFLOW-")
-    
-#       return round(sol[0],5),round(sol[1],5)
     
   def callback2(self,data):
     # Recieve the image
@@ -161,30 +176,24 @@ class image_converter:
 
     # Uncomment if you want to save the image
     #cv2.imwrite('image_copy.png', cv_image)
-    print("prev:",self.prev)
+#    print("prev:",self.prev)
     
     
     centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
     centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
-    
+    print(not_here_1,not_here_2)
+    print(np.any(not_here_1 == True), np.any(not_here_2 ==True))
+    self.hasMissing = np.any(not_here_1) == True or np.any(not_here_2) ==True
+    print(self.hasMissing)
     centers = self.combine(centersYZ,not_here_1,centersXZ,not_here_2)
 #    print(centersYZ, centersXZ)
 #    print(centers)
+    self.prevCenters = centers
+    
     normVecs = self.calcNormVecs(centers)
     
-#     if ((np.array_equal(self.prev,[]))):
-# #       print("in INIT")
-#       ans = self.angles_rotMat([0,0,1],normVecs[1])
-#       self.j2+= ans[1]
-#       self.j3 += ans[0]
-#       self.prev = normVecs[1]
-# #    _,j4 = self.angles_rotMat(normVecs[1],normVecs[2])
-#     else:
-#       ans = self.angles_rotMat(self.prev,normVecs[1])
-#       self.j2 += ans[1]
-#       self.j3 +=ans[0]
-#       self.prev = normVecs[1]
-    self.j3,self.j1 = self.angles_rotMat([0,0,1],normVecs[1])
+
+    self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
     print(self.j1,self.j3)
 
     # print("YZ",centersYZ)
