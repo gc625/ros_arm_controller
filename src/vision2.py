@@ -10,7 +10,8 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float64
 from cv_bridge import CvBridge, CvBridgeError
-
+from collections import deque 
+from sklearn.linear_model import LinearRegression
 class image_converter:
 
     # Defines publisher and subscriber
@@ -47,8 +48,13 @@ class image_converter:
     self.prevX = 0.1
     self.prevZ = 0 
     self.prevCenters = [np.array([0,0,0]),np.array([0,0,0]),np.array([0,0,0])]
+    self.prev5 = deque(maxlen=5)
+    self.slope = 0
+    self.Zpred = 0 
     self.sign = 1 
     
+
+
 
   def callback1(self, data):
     
@@ -65,6 +71,16 @@ class image_converter:
       self.image_pub1.publish(self.bridge.cv2_to_imgmsg(self.cv_image1, "bgr8"))
     except CvBridgeError as e:
       print(e)
+
+  def linreg(self):
+    x = np.array([1, 2, 3, 4, 5]).reshape((-1, 1))
+    z = np.array(self.prev5)
+    model = LinearRegression().fit(x, z)
+    z_pref = model.predict(np.array([6]).reshape((-1,1)))[0]
+    
+
+    self.Zpred = z_pref
+    self.slope = model.coef_
 
   def detect_centers(self,image):
     # Mask each joint
@@ -114,17 +130,24 @@ class image_converter:
   def calcNormVecs(self,centers):
     vecs = []
     for i in range(len(centers) - 1):
-  
       vecs.append((centers[i + 1] - centers[i]) / np.linalg.norm(centers[i + 1] - centers[i]))
 
-
     return vecs
+
+
+  '''
+  bounds the input to be between -1 and 1 so arccos & arcsin doesnt return error  
+
+  '''
   def bound(self,num):
     if num > 1: return 1
     elif num <-1: return -1
     else: return num
 
+
+
   def closestRoot(self,A,B,C):
+    self.linreg()
     roots = []
     r1 = np.arccos(self.bound(-B/np.sin(-1*np.arccos(C))))
     r2 = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
@@ -132,15 +155,15 @@ class image_converter:
     r4 = np.arccos(self.bound(-B/np.sin(np.arccos(C))))*-1
     r5 = np.arcsin(self.bound(A/np.sin(-1*np.arccos(C))))
     r6 = np.arcsin(self.bound(A/np.sin(np.arccos(C))))
-    roots.append((r1,abs(r1-self.prevZ)))
-    roots.append((r2,abs(r2-self.prevZ)))
-    roots.append((r3,abs(r3-self.prevZ)))
-    roots.append((r4,abs(r4-self.prevZ)))
-    roots.append((r5,abs(r5-self.prevZ)))
-    roots.append((r6,abs(r6-self.prevZ)))   
+    roots.append((r1,abs(r1-self.Zpred)))
+    roots.append((r2,abs(r2-self.Zpred)))
+    roots.append((r3,abs(r3-self.Zpred)))
+    roots.append((r4,abs(r4-self.Zpred)))
+    roots.append((r5,abs(r5-self.Zpred)))
+    roots.append((r6,abs(r6-self.Zpred)))   
     roots.sort(key=lambda x:x[1])
     
-    return roots[0][0]
+    return roots
   def angles_rotMat(self,prev,cur,q,hasMissing):
 #    print("in here, ")
 
@@ -152,46 +175,32 @@ class image_converter:
       x = self.prevX
     else:
       x = self.sign*np.arccos(C)
-    sol[0] = x 
-#    z = np.arcsin(A/np.sin(x))
     
-    if self.sign > 0 and x < 0.09 :
-      print(self.prevX, x)
-      if (np.sign(self.prevX) == np.sign(x)):   
+    
+    print("---")
+    if self.sign > 0 and x < 0.10 :
+      if (np.sign(self.prevX) == 1):   
         self.sign *= -1
        
-    elif self.sign < 0 and x > -0.09 :
-      print(self.prevX, x)
-      if (np.sign(self.prevX) == np.sign(x)): 
+    elif self.sign < 0 and x > -0.10 :
+      if (np.sign(self.prevX) == -1): 
         self.sign *= -1
-#    z = self.closestRoot(A,B,C)      
-    if(q == 1):
-      if(self.sign == -1):
-        z = self.closestRoot(A,B,C)
-        
-      else:
-        z = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
-    
-    elif(q == 2): 
-      if(self.sign == -1):
-        z = np.arcsin(self.bound(A/np.sin(-1*np.arccos(C))))
-      else:
-      	z = self.closestRoot(A,B,C)
-      	
-    elif(q == 3):
-      if(self.sign == -1):
-        z = self.closestRoot(A,B,C)
-      else:
-        z = self.closestRoot(A,B,C)
-      
+
+   
+    print(self.Zpred)
+    print(self.slope)
+
+    if len(self.prev5) == 5:
+      z = self.closestRoot(A,B,C)
+      print(self.Zpred,self.slope)
+      print("roots: ", z)     
+      z = z[0][0]
+      self.prev5.append(z)
     else:
-      if(self.sign == -1):
-        z = self.closestRoot(A,B,C)
-      else:
-        z = self.closestRoot(A,B,C)
+      z = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
+      self.prev5.append(z)
 
 
-    sol[1] = z
     #
 #    for i in range(len(sol)):
 #      if sol[i]>2:
@@ -202,7 +211,7 @@ class image_converter:
 #        print("OVERFLOW-")
     self.prevX = x
     self.prevZ = z 
-    return round(sol[0],5),round(sol[1],5)
+    return round(x,5),round(z,5)
 
     
   def callback2(self,data):
@@ -211,55 +220,27 @@ class image_converter:
       self.cv_image2 = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
-
-    # Perform image processing task (your code goes here)
-    # The image is loaded as cv_imag
-
-    # Uncomment if you want to save the image
     #cv2.imwrite('image_copy.png', cv_image)
 #    print("prev:",self.prev)
     
     
     centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
     centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
-#    print(not_here_1,not_here_2)
-#    print(np.any(not_here_1 == True), np.any(not_here_2 ==True))
     self.hasMissing = np.any(not_here_1) == True or np.any(not_here_2) ==True
-#    print(self.hasMissing)
     centers = self.combine(centersYZ,not_here_1,centersXZ,not_here_2)
-#    print(centersYZ, centersXZ)
-#    print(centers)
-    j23 = centers[2]
     
-    self.quad = Float64()
-    xpos = j23[0]
-    ypos = j23[1]
-    if xpos >=0 and ypos >=0:
-      q = 1
-    elif xpos <=0 and ypos >=0:
-      q = 2
-    elif xpos <=0 and ypos <=0:
-      q = 3
-    elif xpos >=0 and ypos <=0:
-      q = 4
-    else:
-      q = 1 
-    
-    
-    self.quad.data = q
-    self.quadrant.publish(self.quad)
+    xpos,ypos = centers[2][0],centers[2][1]
+
+    if xpos >=0 and ypos >=0: q = 1
+    elif xpos <=0 and ypos >=0: q = 2
+    elif xpos <=0 and ypos <=0: q = 3
+    elif xpos >=0 and ypos <=0: q = 4
+    else: q = 1 
     
     self.prevCenters = centers
-    
     normVecs = self.calcNormVecs(centers)
-    print(normVecs[1])
 
     self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],q,self.hasMissing)
-    print(self.j1,self.j3)
-
-    # print("YZ",centersYZ)
-    # print("XZ",centersXZ)
-
 
     # cv2.imshow('window', cv_image)
     # cv2.waitKey(3)
@@ -267,13 +248,16 @@ class image_converter:
     self.joint1 = Float64()
     self.joint3 = Float64()
     self.joint4 = Float64()
+    self.quad = Float64()
     self.joint1.data = self.j1
     self.joint3.data = self.j3
 #    self.joint4.data = j4
-    
+    self.quad.data = q
+
     self.joint_angle_1.publish(self.joint1)
     self.joint_angle_3.publish(self.joint3)
 #    self.joint_angle_4.publish(joint4)
+    self.quadrant.publish(self.quad)
     
     
     
