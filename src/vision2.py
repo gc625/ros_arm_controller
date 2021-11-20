@@ -76,7 +76,7 @@ class image_converter:
     x = np.array([1, 2, 3, 4, 5]).reshape((-1, 1))
     z = np.array(self.prev5)
     model = LinearRegression().fit(x, z)
-    z_pref = model.predict(np.array([6]).reshape((-1,1)))[0]
+    z_pref = model.predict(np.array([6.5]).reshape((-1,1)))[0]
     
 
     self.Zpred = z_pref
