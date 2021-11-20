@@ -31,6 +31,7 @@ class image_converter:
     self.joint_angle_3 = rospy.Publisher("joint_angle_3",Float64, queue_size=10)
     self.joint_angle_4 = rospy.Publisher("joint_angle_4",Float64, queue_size=10)
     self.quadrant = rospy.Publisher("quadrant",Float64,queue_size = 10)
+    self.predictedZ = rospy.Publisher("quadrant",Float64,queue_size = 10)
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
@@ -48,9 +49,11 @@ class image_converter:
     self.prevX = 0.1
     self.prevZ = 0 
     self.prevCenters = [np.array([0,0,0]),np.array([0,0,0]),np.array([0,0,0])]
-    self.prev5z = deque(maxlen=15)
-    self.prev5x = deque(maxlen=5)
-   
+    self.dequelength = 15 
+    self.prevNZ = deque([0]*self.dequelength,maxlen=self.dequelength)
+
+    self.prevNX = deque([0]*self.dequelength,maxlen=self.dequelength)
+    self.maxDiff = 0.2 
     self.Zslope = 1
     self.Zpred = 0 
     self.Xslope = 0
@@ -135,20 +138,20 @@ class image_converter:
 
   '''
   def linregX(self):
-    x = np.array(list(range(1,len(self.prev5x)+1))).reshape((-1, 1))
-    X = np.array(self.prev5x)
+    x = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    X = np.array(self.prevNX)
     model = LinearRegression().fit(x, X)
-    X_pref = model.predict(np.array([6]).reshape((-1,1)))[0]
+    X_pref = model.predict(np.array([self.dequelength]).reshape((-1,1)))[0]
     
 
     self.Xpred = X_pref
     self.Xslope = model.coef_[0]
 
   def linregZ(self):
-    x = np.array(list(range(1,len(self.prev5z)+1))).reshape((-1, 1))
-    z = np.array(self.prev5z)
+    x = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    z = np.array(self.prevNZ)
     model = LinearRegression().fit(x, z)
-    z_pref = model.predict(np.array([16]).reshape((-1,1)))[0]
+    z_pref = model.predict(np.array([self.dequelength]).reshape((-1,1)))[0]
     
 
     self.Zpred = z_pref
@@ -177,6 +180,7 @@ class image_converter:
     roots.append((r5,abs(r5-self.Zpred)))
     roots.append((r6,abs(r6-self.Zpred)))   
     roots.sort(key=lambda x:x[1])
+
     
     return roots
   def angles_rotMat(self,prev,cur,q,hasMissing):
@@ -187,14 +191,15 @@ class image_converter:
     A,B,C = cur[0],cur[1],self.bound(cur[2])
     
     if hasMissing:
-      x = self.prevX
-      x = self.prev5x[4]
+      # x = self.prevX
+      x = self.prevNX[self.dequelength-1]
     else:
       x = self.sign*np.arccos(C)
     
     
     print("---")
-    if len(self.prev5x) == 5:
+    if np.count_nonzero(self.prevNZ) >=5: 
+
       self.linregX()
       print(self.Xpred)
     if self.sign > 0 and x < 0.09 :
@@ -209,15 +214,20 @@ class image_converter:
 #    print(self.Xpred)
 #    print(self.Xslope)
 
-    if len(self.prev5z) == 15:
+# make sure we detected some movement before initializing
+    if np.count_nonzero(self.prevNZ) >=10: 
       z = self.closestRoot(A,B,C)
       print(self.Zpred,self.Zslope)
       print("roots: ", z[0:5])     
       z = z[0][0]
-      self.prev5z.append(z)
+
+      if z[0][1] > self.maxDiff:
+        z = self.Zpred
+      
+      self.prevNZ.append(z)
     else:
       z = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
-      self.prev5z.append(z)
+      self.prevNZ.append(z)
 
 
     #
@@ -228,8 +238,8 @@ class image_converter:
 #      elif sol[i]< -2 :
 #        sol[i] = -2.0   
 #        print("OVERFLOW-")
-    self.prev5x.append(x)
-    print(self.prev5x)
+    self.prevNX.append(x)
+    print(self.prevNX)
     self.prevX = x
     self.prevZ = z 
     return round(x,5),round(z,5)
@@ -270,11 +280,14 @@ class image_converter:
     self.joint3 = Float64()
     self.joint4 = Float64()
     self.quad = Float64()
+    self.predZ = Float64()
     self.joint1.data = self.j1
     self.joint3.data = self.j3
 #    self.joint4.data = j4
     self.quad.data = q
+    self.predZ.data= self.Zpred
 
+    self.predictedZ.publish(self.predZ)
     self.joint_angle_1.publish(self.joint1)
     self.joint_angle_3.publish(self.joint3)
 #    self.joint_angle_4.publish(joint4)
