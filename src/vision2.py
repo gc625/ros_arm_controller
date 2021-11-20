@@ -48,8 +48,9 @@ class image_converter:
     self.prevX = 0.1
     self.prevZ = 0 
     self.prevCenters = [np.array([0,0,0]),np.array([0,0,0]),np.array([0,0,0])]
-    self.prev5 = deque(maxlen=5)
-    self.slope = 0
+    self.prev5z = deque(maxlen=5)
+    self.prev5x = deque(maxlen=5)
+    self.Zslope = 0
     self.Zpred = 0 
     self.sign = 1 
     
@@ -72,15 +73,7 @@ class image_converter:
     except CvBridgeError as e:
       print(e)
 
-  def linreg(self):
-    x = np.array([1, 2, 3, 4, 5]).reshape((-1, 1))
-    z = np.array(self.prev5)
-    model = LinearRegression().fit(x, z)
-    z_pref = model.predict(np.array([6.5]).reshape((-1,1)))[0]
-    
-
-    self.Zpred = z_pref
-    self.slope = model.coef_
+  
 
   def detect_centers(self,image):
     # Mask each joint
@@ -139,6 +132,26 @@ class image_converter:
   bounds the input to be between -1 and 1 so arccos & arcsin doesnt return error  
 
   '''
+  def linregX(self):
+    x = np.array([1, 2, 3, 4, 5]).reshape((-1, 1))
+    X = np.array(self.prev5x)
+    model = LinearRegression().fit(x, z)
+    X_pref = model.predict(np.array([6]).reshape((-1,1)))[0]
+    
+
+    self.Xpred = X_pref
+    self.Xslope = model.coef_
+
+  def linregZ(self):
+    x = np.array([1, 2, 3, 4, 5]).reshape((-1, 1))
+    z = np.array(self.prev5z)
+    model = LinearRegression().fit(x, z)
+    z_pref = model.predict(np.array([6.5]).reshape((-1,1)))[0]
+    
+
+    self.Zpred = z_pref
+    self.Zslope = model.coef_
+
   def bound(self,num):
     if num > 1: return 1
     elif num <-1: return -1
@@ -147,7 +160,7 @@ class image_converter:
 
 
   def closestRoot(self,A,B,C):
-    self.linreg()
+    self.linreZ()
     roots = []
     r1 = np.arccos(self.bound(-B/np.sin(-1*np.arccos(C))))
     r2 = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
@@ -173,32 +186,33 @@ class image_converter:
     
     if hasMissing:
       x = self.prevX
+      x = self.prev5x[4]
     else:
       x = self.sign*np.arccos(C)
     
     
     print("---")
-    if self.sign > 0 and x < 0.10 :
-      if (np.sign(self.prevX) == 1):   
+    if self.sign > 0 and x < 0.09 :
+      if (np.sign(self.Xslope) == -1):   
         self.sign *= -1
        
-    elif self.sign < 0 and x > -0.10 :
-      if (np.sign(self.prevX) == -1): 
+    elif self.sign < 0 and x > -0.09 :
+      if (np.sign(self.Xslope) == 1): 
         self.sign *= -1
 
    
     print(self.Zpred)
     print(self.slope)
 
-    if len(self.prev5) == 5:
+    if len(self.prev5z) == 5:
       z = self.closestRoot(A,B,C)
       print(self.Zpred,self.slope)
       print("roots: ", z)     
       z = z[0][0]
-      self.prev5.append(z)
+      self.prev5z.append(z)
     else:
       z = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
-      self.prev5.append(z)
+      self.prev5z.append(z)
 
 
     #
@@ -209,6 +223,7 @@ class image_converter:
 #      elif sol[i]< -2 :
 #        sol[i] = -2.0   
 #        print("OVERFLOW-")
+    self.prev5x.append(x)
     self.prevX = x
     self.prevZ = z 
     return round(x,5),round(z,5)
