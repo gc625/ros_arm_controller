@@ -164,7 +164,7 @@ class image_converter:
       print(self.prevX, x)
       if (np.sign(self.prevX) == np.sign(x)): 
         self.sign *= -1
-    z = self.closestRoot(A,B,C)      
+#    z = self.closestRoot(A,B,C)      
     if(q == 1):
       if(self.sign == -1):
         z = self.closestRoot(A,B,C)
