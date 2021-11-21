@@ -253,7 +253,7 @@ class image_converter:
     if firstDiff > self.maxDiff:
       y = (4/5)*self.Ypred + (1/5)*CalculatedY
     else:
-      y = (1/5)*self.Ypred + (4/5)*CalculatedY
+      y = (2/5)*self.Ypred + (3/5)*CalculatedY
 
     return y
 
