@@ -186,10 +186,10 @@ class image_converter:
     return roots
 
   def angle_fromdot(self,vec1,vec2):
-    return np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
+    return np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.sign
 
 
-    return 
+    
   def angles_rotMat(self,prev,cur,q,hasMissing):
 #    print("in here, ")
   
@@ -286,9 +286,9 @@ class image_converter:
 
     self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],q,self.hasMissing)
 
-    self.j4 = angle_fromdot(vec1[1],vec2[2])
+    self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
-
+    print(normVecs[1],normVecs[2],self.j1,self.j3)
     # cv2.imshow('window', cv_image)
     # cv2.waitKey(3)
 
@@ -299,14 +299,14 @@ class image_converter:
     self.predZ = Float64()
     self.joint1.data = self.j1
     self.joint3.data = self.j3
-    self.joint4.data = j4
+    self.joint4.data = self.j4
     self.quad.data = q
     self.predZ.data= self.Zpred
 
     self.predictedZ.publish(self.predZ)
     self.joint_angle_1.publish(self.joint1)
     self.joint_angle_3.publish(self.joint3)
-    self.joint_angle_4.publish(joint4)
+    self.joint_angle_4.publish(self.joint4)
     self.quadrant.publish(self.quad)
     
     
