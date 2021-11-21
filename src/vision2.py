@@ -148,6 +148,7 @@ class image_converter:
   '''
   preforms linear regression on the past <self.dequelength> angles 
   '''
+  def linregX(self):
     t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
     X = np.array(self.prevNX)
     model = LinearRegression().fit(t, X)
