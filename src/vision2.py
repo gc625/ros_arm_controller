@@ -170,7 +170,7 @@ class image_converter:
 
   def linregY(self):
     t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
-    Y = np.array(self.prevY)
+    Y = np.array(self.prevNY)
     model = LinearRegression().fit(t, Y)
     Y_pref = model.predict(np.array([self.dequelength+1]).reshape((-1,1)))[0]
     
