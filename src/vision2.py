@@ -67,14 +67,14 @@ class image_converter:
     self.sign = 1 
     self.ySign = 1 
     
-    self.joint_1_actual = Float64(0)
-    self.joint_3_actual = Float64(0)
-    self.joint_4_actual = Float64(0)
+    self.joint_1_actual = 0.
+    self.joint_3_actual = 0.
+    self.joint_4_actual = 0.
 
   def getActual(self,data):
-    self.joint_1_actual = data[0]
-    self.joint_3_actual = data[1]
-    self.joint_4_actual = data[2]
+    self.joint_1_actual = float(data[0])
+    self.joint_3_actual = float(data[1])
+    self.joint_4_actual = float(data[2])
 
   def callback1(self, data):
     
@@ -349,9 +349,9 @@ class image_converter:
     self.joint_angle_4.publish(self.joint4)
 
     self.error1,self.error3,self.error4 = Float64(),Float64(),Float64()
-    self.error1.data = abs(self.joint1-self.joint_1_actual)
-    self.error3.data = abs(self.joint3-self.joint_3_actual)
-    self.error4.data = abs(self.joint4-self.joint_4_actual)
+    self.error1.data = abs(self.j1-self.joint_1_actual)
+    self.error3.data = abs(self.j3-self.joint_3_actual)
+    self.error4.data = abs(self.j4-self.joint_4_actual)
 
     self.joint_1_error.publish(error1)
     self.joint_3_error.publish(error3)
