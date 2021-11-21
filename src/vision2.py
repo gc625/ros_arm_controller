@@ -31,7 +31,7 @@ class image_converter:
     self.joint_angle_3 = rospy.Publisher("joint_angle_3",Float64, queue_size=10)
     self.joint_angle_4 = rospy.Publisher("joint_angle_4",Float64, queue_size=10)
     self.quadrant = rospy.Publisher("quadrant",Float64,queue_size = 10)
-    self.predictedZ = rospy.Publisher("quadrant",Float64,queue_size = 10)
+    self.predictedZ = rospy.Publisher("predictedZ",Float64,queue_size = 10)
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
@@ -49,11 +49,11 @@ class image_converter:
     self.prevX = 0.1
     self.prevZ = 0 
     self.prevCenters = [np.array([0,0,0]),np.array([0,0,0]),np.array([0,0,0])]
-    self.dequelength = 15 
+    self.dequelength = 18
     self.prevNZ = deque([0]*self.dequelength,maxlen=self.dequelength)
 
     self.prevNX = deque([0]*self.dequelength,maxlen=self.dequelength)
-    self.maxDiff = 0.2 
+    self.maxDiff = 0.4
     self.Zslope = 1
     self.Zpred = 0 
     self.Xslope = 0
@@ -141,7 +141,7 @@ class image_converter:
     x = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
     X = np.array(self.prevNX)
     model = LinearRegression().fit(x, X)
-    X_pref = model.predict(np.array([self.dequelength]).reshape((-1,1)))[0]
+    X_pref = model.predict(np.array([self.dequelength+1]).reshape((-1,1)))[0]
     
 
     self.Xpred = X_pref
@@ -151,7 +151,8 @@ class image_converter:
     x = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
     z = np.array(self.prevNZ)
     model = LinearRegression().fit(x, z)
-    z_pref = model.predict(np.array([self.dequelength]).reshape((-1,1)))[0]
+#    print(len(x))
+    z_pref = model.predict(np.array([self.dequelength+1+0.5]).reshape((-1,1)))[0]
     
 
     self.Zpred = z_pref
@@ -186,22 +187,21 @@ class image_converter:
   def angles_rotMat(self,prev,cur,q,hasMissing):
 #    print("in here, ")
   
-    sol = [0,0]
+    
     a,b,c = prev[0],prev[1],prev[2]
     A,B,C = cur[0],cur[1],self.bound(cur[2])
     
     if hasMissing:
-      # x = self.prevX
-      x = self.prevNX[self.dequelength-1]
+      x = self.prevX
+#      x = self.prevNX[self.dequelength-1]
     else:
       x = self.sign*np.arccos(C)
     
     
-    print("---")
-    if np.count_nonzero(self.prevNZ) >=5: 
-
+#    print("---")
+    if np.count_nonzero(self.prevNX) >=5: 
       self.linregX()
-      print(self.Xpred)
+#      print("xpred",self.Xpred)
     if self.sign > 0 and x < 0.09 :
       if (np.sign(self.Xslope) == -1):   
         self.sign *= -1
@@ -214,16 +214,21 @@ class image_converter:
 #    print(self.Xpred)
 #    print(self.Xslope)
 
+    print(np.count_nonzero(self.prevNZ))
 # make sure we detected some movement before initializing
-    if np.count_nonzero(self.prevNZ) >=10: 
-      z = self.closestRoot(A,B,C)
-      print(self.Zpred,self.Zslope)
-      print("roots: ", z[0:5])     
-      z = z[0][0]
+    if np.count_nonzero(self.prevNZ) >=self.dequelength/2: 
+      roots = self.closestRoot(A,B,C)
+#      print(self.Zpred,self.Zslope)
+#      print("roots: ", roots[0:5])     
+      first= roots[0]
+      z = first[0]
+      print("--------------")
+      print(self.Zpred, self.Zslope)
+      print("z",z, " roots: ", roots)
+      print("--------------")
+#      if first[1] > self.maxDiff:
+#        z = self.Zpred
 
-      if z[0][1] > self.maxDiff:
-        z = self.Zpred
-      
       self.prevNZ.append(z)
     else:
       z = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
@@ -239,7 +244,9 @@ class image_converter:
 #        sol[i] = -2.0   
 #        print("OVERFLOW-")
     self.prevNX.append(x)
-    print(self.prevNX)
+    
+    
+#    print(self.prevNX)
     self.prevX = x
     self.prevZ = z 
     return round(x,5),round(z,5)
