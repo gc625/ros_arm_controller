@@ -58,6 +58,7 @@ class image_converter:
     self.Zpred = 0 
     self.Xslope = 0
     self.sign = 1 
+    self.ySign
     
 
 
@@ -214,13 +215,23 @@ class image_converter:
     return roots
 
   def angle_fromdot(self,vec1,vec2):
+    self.linregY()
 
-    j4 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.sign
+    y = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.ySign
+
+    if self.ySign > 0 and y < 0.09 and (np.sign(self.Yslope) == -1):   
+        self.ySign *= -1
+    # If y is negative and gets close enough to 0 with postive slope, flip sign of next x angle
+    elif self.ySign < 0 and y > -0.09 and (np.sign(self.Yslope) == 1):
+        self.ySign *= -1
+
+    # j4 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
 
 
-    self.prevNY.append(j4)
 
-    return j4 
+    self.prevNY.append(y)
+
+    return y
 
     
   def angles_rotMat(self,prev,cur,hasMissing):
