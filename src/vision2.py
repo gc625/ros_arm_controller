@@ -349,9 +349,9 @@ class image_converter:
     self.joint_angle_4.publish(self.joint4)
 
     self.error1,self.error3,self.error4 = Float64(),Float64(),Float64()
-    self.error1.data = abs(self.joint1-self.joint_1_actual)
-    self.error3.data = abs(self.joint3-self.joint_3_actual) 
-    self.error4.data = abs(self.joint4-self.joint_4_actual) 
+    self.error1.data = abs(self.joint1-np.Float64(self.joint_1_actual))
+    self.error3.data = abs(self.joint3-np.Float64(self.joint_3_actual))
+    self.error4.data = abs(self.joint4-np.Float64(self.joint_4_actual))
 
     self.joint_1_error.publish(error1)
     self.joint_3_error.publish(error3)
