@@ -67,9 +67,9 @@ class image_converter:
     self.sign = 1 
     self.ySign = 1 
     
-    self.joint_1_actual = 0.
-    self.joint_3_actual = 0.
-    self.joint_4_actual = 0.
+    self.joint_1_actual = Float64(0)
+    self.joint_3_actual = Float64(0)
+    self.joint_4_actual = Float64(0)
 
   def getActual(self,data):
     self.joint_1_actual = data[0]
