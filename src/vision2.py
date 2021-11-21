@@ -223,8 +223,10 @@ class image_converter:
 
   def closestXRoot(self,C):
     roots = []
-    r1,d1 = self.sign*np.arccos(C),abs(r1-self.Xpred)
-    r2,d2 = -1*self.sign*np.arccos(C),abs(r2-self.Xpred)
+    r1 = np.arccos(C)
+    d1 = abs(r1-self.Xpred)
+    r2 = -1*np.arccos(C)
+    d2 = abs(r2-self.Xpred)
     roots.append((r1,d1))
     roots.append((r2,d2))
 
@@ -240,8 +242,10 @@ class image_converter:
 
   def closestYRoot(self,vec1,vec2):
     roots = []
-    r1,d1 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0)),abs(r1-self.Ypred)
-    r2,d2 = -1*np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0)),abs(r2-self.Ypred)
+    r1 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
+    d1 = abs(r1-self.Ypred)
+    r2 = -1*np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
+    d2 = abs(r2-self.Ypred)
     roots.append((r1,d1))
     roots.append((r2,d2))
     roots.sort(key=lambda x:x[1])
