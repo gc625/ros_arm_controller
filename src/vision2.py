@@ -228,7 +228,8 @@ class image_converter:
     d1 = abs(r1-self.Xpred)
     d2 = abs(r2-self.Xpred)
 
-    roots.append((r1,d1),(r2,d2))
+    roots.append((r1,d1))
+    roots.append((r2,d2))
     roots.sort(key=lambda x:x[1])
     CalculatedX,firstDiff = roots[0][0], roots[0][1] 
        
