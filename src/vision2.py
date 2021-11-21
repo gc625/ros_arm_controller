@@ -148,7 +148,6 @@ class image_converter:
   '''
   preforms linear regression on the past <self.dequelength> angles 
   '''
-  def linregX(self):
     t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
     X = np.array(self.prevNX)
     model = LinearRegression().fit(t, X)
@@ -238,18 +237,21 @@ class image_converter:
 
     
   def angles_rotMat(self,prev,cur,hasMissing):
-
+    
+    if np.count_nonzero(self.prevNX) >=5: 
+      self.linregX()
+    
     a,b,c = prev[0],prev[1],prev[2]
     A,B,C = cur[0],cur[1],self.bound(cur[2])
     
     if hasMissing:
-      x = self.prevX
+      # x = self.prevX
+      x = self.Xpred
 #      x = self.prevNX[self.dequelength-1]
     else:
       x = self.sign*np.arccos(C)
     
-    if np.count_nonzero(self.prevNX) >=5: 
-      self.linregX()
+
 
 
     # If x is positive and gets close enough to 0 with negative slope, flip sign of next x angle
