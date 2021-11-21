@@ -353,9 +353,9 @@ class image_converter:
     self.error3.data = abs(self.j3-self.joint_3_actual)
     self.error4.data = abs(self.j4-self.joint_4_actual)
 
-    self.joint_1_error.publish(error1)
-    self.joint_3_error.publish(error3)
-    self.joint_4_error.publish(error4)
+    self.joint_1_error.publish(self.error1)
+    self.joint_3_error.publish(self.error3)
+    self.joint_4_error.publish(self.error4)
 
     self.predZ = Float64()
     self.predZ.data= self.Zpred
