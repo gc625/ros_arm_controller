@@ -234,7 +234,7 @@ class image_converter:
     CalculatedX,firstDiff = roots[0][0], roots[0][1] 
        
     if firstDiff > self.maxDiff:
-      x = (4/5)*self.Xpred + (1/5)*CalculatedX
+      x = (3/5)*self.Xpred + (2/5)*CalculatedX
     else:
       x = (1/3)*self.Xpred + (2/3)*CalculatedX
 
