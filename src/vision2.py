@@ -220,7 +220,7 @@ class image_converter:
     y = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.ySign
 
     if np.count_nonzero(self.prevNY)>=self.dequelength/2:
-      y = (3/5)*self.Ypred + (2/5)*y
+      y = (2/5)*self.Ypred + (3/5)*y
 
     if self.ySign > 0 and y < 0.09 and (np.sign(self.Yslope) == -1):   
         self.ySign *= -1
@@ -265,6 +265,7 @@ class image_converter:
       roots = self.closestRoot(A,B,C)  
       first= roots[0]
       z = first[0]
+      z = (1/2)*self.predZ + (1/2)*z 
 #      if first[1] > self.maxDiff:
 #        z = self.Zpred
       
