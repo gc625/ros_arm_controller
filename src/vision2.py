@@ -220,6 +220,7 @@ class image_converter:
 
     self.prevNY.append(j4)
 
+    return j4 
 
     
   def angles_rotMat(self,prev,cur,hasMissing):
