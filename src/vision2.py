@@ -273,17 +273,19 @@ class image_converter:
       x = self.Xpred
 #      x = self.prevNX[self.dequelength-1]
     else:
-      
-      x = closestXRoot(C)
+      if np.count_nonzero(self.prevNX) >=self.dequelength/2: 
+        x = self.closestXRoot(C)
+      else:
+        x = np.arccos(C)
     
 
     # If x is positive and gets close enough to 0 with negative slope, flip sign of next x angle
-    if self.sign > 0 and x < 0.09 and (np.sign(self.Xslope) == -1):   
-        self.sign *= -1
+    # if self.sign > 0 and x < 0.09 and (np.sign(self.Xslope) == -1):   
+    #     self.sign *= -1
 
-    # If x is negative and gets close enough to 0 with postive slope, flip sign of next x angle
-    elif self.sign < 0 and x > -0.09 and (np.sign(self.Xslope) == 1):
-        self.sign *= -1
+    # # If x is negative and gets close enough to 0 with postive slope, flip sign of next x angle
+    # elif self.sign < 0 and x > -0.09 and (np.sign(self.Xslope) == 1):
+    #     self.sign *= -1
 
     # make sure we detected some movement before initializing
     if np.count_nonzero(self.prevNZ) >=self.dequelength/2: 
