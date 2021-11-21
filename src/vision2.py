@@ -220,7 +220,7 @@ class image_converter:
     y = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.ySign
 
     if np.count_nonzero(self.prevNY)>=self.dequelength/2:
-      y = (2/3)*self.Ypred + (1/3)*y
+      y = (3/5)*self.Ypred + (2/5)*y
 
     if self.ySign > 0 and y < 0.09 and (np.sign(self.Yslope) == -1):   
         self.ySign *= -1
