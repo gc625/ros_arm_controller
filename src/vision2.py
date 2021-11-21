@@ -189,19 +189,19 @@ class image_converter:
 
 
 
-  def closestRoot(self,A,B,C):
+  def closestZRoot(self,A,B,x):
     # predicts approx what value should the next solution have
     self.linregZ()
 
 
     # All possible solutions
     roots = []
-    r1 = np.arccos(self.bound(-B/np.sin(-1*np.arccos(C))))
-    r2 = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
-    r3 = np.arccos(self.bound(-B/np.sin(-1*np.arccos(C))))*-1
-    r4 = np.arccos(self.bound(-B/np.sin(np.arccos(C))))*-1
-    r5 = np.arcsin(self.bound(A/np.sin(-1*np.arccos(C))))
-    r6 = np.arcsin(self.bound(A/np.sin(np.arccos(C))))
+    r1 = np.arccos(self.bound(-B/np.sin(-1*x)))
+    r2 = np.arccos(self.bound(-B/np.sin(x)))
+    r3 = np.arccos(self.bound(-B/np.sin(-1*x)))*-1
+    r4 = np.arccos(self.bound(-B/np.sin(x)))*-1
+    r5 = np.arcsin(self.bound(A/np.sin(-1*x)))
+    r6 = np.arcsin(self.bound(A/np.sin(x)))
     roots.append((r1,abs(r1-self.Zpred)))
     roots.append((r2,abs(r2-self.Zpred)))
     roots.append((r3,abs(r3-self.Zpred)))
@@ -210,9 +210,35 @@ class image_converter:
     roots.append((r6,abs(r6-self.Zpred)))   
     
     # sort solutions such that index[0] is solution closest to predicted Z
-    roots.sort(key=lambda x:x[1])
+    roots.sort(key=lambda z:z[1])
 
-    return roots
+    CalculatedZ,firstDiff = roots[0][0], roots[0][1]
+
+    if firstDiff > self.maxDiff:
+      z = (4/5)*self.Zpred + (1/5)*CalculatedZ
+    else:
+      z = (1/3)*self.Zpred + (2/3)*CalculatedZ
+
+    return z
+
+  def closestXRoot(self,C):
+    roots = []
+    r1 = self.sign*np.arccos(C)
+    r2 = -1*self.sign*np.arccos(C)
+    d1 = abs(r1-self.Xpred)
+    d2 = abs(r2-self.Xpred)
+
+    roots.append((r1,d1),(r2,d2))
+    roots.sort(key=lambda x:x[1])
+    CalculatedX,firstDiff = roots[0][0], roots[0][1] 
+       
+    if firstDiff > self.maxDiff:
+      x = (4/5)*self.Xpred + (1/5)*CalculatedX
+    else:
+      x = (1/3)*self.Xpred + (2/3)*CalculatedX
+
+    return x 
+
 
   def angle_fromdot(self,vec1,vec2):
     self.linregY()
@@ -227,9 +253,6 @@ class image_converter:
     # If y is negative and gets close enough to 0 with postive slope, flip sign of next x angle
     elif self.ySign < 0 and y > -0.09 and (np.sign(self.Yslope) == 1):
         self.ySign *= -1
-
-    # j4 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
-
 
 
     self.prevNY.append(y)
@@ -250,10 +273,9 @@ class image_converter:
       x = self.Xpred
 #      x = self.prevNX[self.dequelength-1]
     else:
-      x = self.sign*np.arccos(C)
+      
+      x = closestXRoot(C)
     
-
-
 
     # If x is positive and gets close enough to 0 with negative slope, flip sign of next x angle
     if self.sign > 0 and x < 0.09 and (np.sign(self.Xslope) == -1):   
@@ -265,16 +287,7 @@ class image_converter:
 
     # make sure we detected some movement before initializing
     if np.count_nonzero(self.prevNZ) >=self.dequelength/2: 
-      roots = self.closestRoot(A,B,C)  
-      first= roots[0]
-      z = first[0]
-
-      
-      if first[1] > self.maxDiff:
-        z = (4/5)*self.Zpred + (1/5)*z 
-      else:
-        z = (1/3)*self.Zpred + (2/3)*z 
-      
+      z = self.closestZRoot(A,B,x)  
 
     # Begin detection by using quadrant 1 solution
     else: 
