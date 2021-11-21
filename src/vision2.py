@@ -217,12 +217,12 @@ class image_converter:
 
     j4 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.sign
 
-    
+
     self.prevNY.append(j4)
 
 
     
-  def angles_rotMat(self,prev,cur,q,hasMissing):
+  def angles_rotMat(self,prev,cur,hasMissing):
 
     a,b,c = prev[0],prev[1],prev[2]
     A,B,C = cur[0],cur[1],self.bound(cur[2])
@@ -283,7 +283,7 @@ class image_converter:
 
     normVecs = self.calcNormVecs(centers)
 
-    self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],q,self.hasMissing)
+    self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
     self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
     # print(normVecs[1],normVecs[2],self.j1,self.j3)
