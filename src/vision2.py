@@ -51,8 +51,8 @@ class image_converter:
     self.prevCenters = [np.array([0,0,0]),np.array([0,0,0]),np.array([0,0,0])]
     self.dequelength = 18
     self.prevNZ = deque([0]*self.dequelength,maxlen=self.dequelength)
-
     self.prevNX = deque([0]*self.dequelength,maxlen=self.dequelength)
+    self.prevNY = deque([0]*self.dequelength,maxlen=self.dequelength)
     self.maxDiff = 0.4
     self.Zslope = 1
     self.Zpred = 0 
@@ -81,23 +81,29 @@ class image_converter:
   
 
   def detect_centers(self,image):
-    # Mask each joint
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    
+    # HSV does a better job than rgb
 
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     yMask = cv2.inRange(hsv, (15, 0, 0), (36, 255, 255))
     bMask = cv2.inRange(hsv, (110, 50, 50), (130, 255, 255))
     gMask = cv2.inRange(hsv, (36, 0, 0), (70, 255, 255))
     rMask = cv2.inRange(hsv, (0, 70, 50), (10, 255, 255))
+
     masks = [gMask,yMask,bMask,rMask]
     kernel = np.ones((5, 5), np.uint8)
 
     centers = []
+
     # Calculate the center for each joint
-    not_here= [False,False,False,False]
+    missing= [False,False,False,False]
+
     for i,mask in enumerate(masks):
       mask = cv2.dilate(mask, kernel, iterations=3)
+
+      # No contours signifies occulusion
       if(np.sum(mask) == 0):
-        not_here[i] = True
+        missing[i] = True
         centers.append(np.array([0,0]))
       else:
         M = cv2.moments(mask)
@@ -110,47 +116,50 @@ class image_converter:
 
     for i in range(len(centers)):
       centers[i] = np.array([centers[i][0] - newX, -1 * (centers[i][1] - newY)])
-    return centers,not_here 
+    return centers,missing 
 
   def combine(self,yz,not_here1,xz,not_here2):
     # averages z coord for now
     combined = []
     for i in range(len(yz)):
       if(not_here1[i] == True): # if a center is missing from cam 1  
-        combined.append(np.array((xz[i][0],self.prevCenters[i][1],yz[i][1])))
+        combined.append(np.array((xz[i][0],self.prevCenters[i][1],xz[i][1])))
       elif(not_here2[i] == True): # if center is missing from cam 2, 
-        combined.append(np.array((self.prevCenters[i][0],yz[i][0],xz[i][1])))
+        combined.append(np.array((self.prevCenters[i][0],yz[i][0],yz[i][1])))
       else:
         combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+yz[i][1])/2)))
 	
     return combined
 
+  '''
+  returns unit vectors with directions:
+  joint 1 to joint2/3
+  joint 2/3 to joint4
+  joint 4 to end effector 
+  '''
+
   def calcNormVecs(self,centers):
     vecs = []
     for i in range(len(centers) - 1):
       vecs.append((centers[i + 1] - centers[i]) / np.linalg.norm(centers[i + 1] - centers[i]))
-
     return vecs
 
-
   '''
-  bounds the input to be between -1 and 1 so arccos & arcsin doesnt return error  
-
+  preforms linear regression on the past <self.dequelength> angles 
   '''
   def linregX(self):
-    x = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
     X = np.array(self.prevNX)
-    model = LinearRegression().fit(x, X)
+    model = LinearRegression().fit(t, X)
     X_pref = model.predict(np.array([self.dequelength+1]).reshape((-1,1)))[0]
     
-
     self.Xpred = X_pref
     self.Xslope = model.coef_[0]
 
   def linregZ(self):
-    x = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
     z = np.array(self.prevNZ)
-    model = LinearRegression().fit(x, z)
+    model = LinearRegression().fit(t, z)
 #    print(len(x))
     z_pref = model.predict(np.array([self.dequelength+1+0.5]).reshape((-1,1)))[0]
     
@@ -158,6 +167,20 @@ class image_converter:
     self.Zpred = z_pref
     self.Zslope = model.coef_[0]
 
+  def linregY(self):
+    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    Y = np.array(self.prevY)
+    model = LinearRegression().fit(t, Y)
+    Y_pref = model.predict(np.array([self.dequelength+1]).reshape((-1,1)))[0]
+    
+
+    self.Ypred = Y_pref
+    self.Yslope = model.coef_[0]
+  
+
+  '''
+  force -1 <= num <= 1 so arccos and arcsin does not return error
+  '''
   def bound(self,num):
     if num > 1: return 1
     elif num <-1: return -1
@@ -166,7 +189,11 @@ class image_converter:
 
 
   def closestRoot(self,A,B,C):
+    # predicts approx what value should the next solution have
     self.linregZ()
+
+
+    # All possible solutions
     roots = []
     r1 = np.arccos(self.bound(-B/np.sin(-1*np.arccos(C))))
     r2 = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
@@ -180,20 +207,23 @@ class image_converter:
     roots.append((r4,abs(r4-self.Zpred)))
     roots.append((r5,abs(r5-self.Zpred)))
     roots.append((r6,abs(r6-self.Zpred)))   
+    
+    # sort solutions such that index[0] is solution closest to predicted Z
     roots.sort(key=lambda x:x[1])
 
-    
     return roots
 
   def angle_fromdot(self,vec1,vec2):
-    return np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.sign
+
+    j4 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.sign
+
+    
+    self.prevNY.append(j4)
 
 
     
   def angles_rotMat(self,prev,cur,q,hasMissing):
-#    print("in here, ")
-  
-    
+
     a,b,c = prev[0],prev[1],prev[2]
     A,B,C = cur[0],cur[1],self.bound(cur[2])
     
@@ -203,56 +233,35 @@ class image_converter:
     else:
       x = self.sign*np.arccos(C)
     
-    
-#    print("---")
     if np.count_nonzero(self.prevNX) >=5: 
       self.linregX()
-#      print("xpred",self.Xpred)
-    if self.sign > 0 and x < 0.09 :
-      if (np.sign(self.Xslope) == -1):   
-        self.sign *= -1
-       
-    elif self.sign < 0 and x > -0.09 :
-      if (np.sign(self.Xslope) == 1): 
+
+
+    # If x is positive and gets close enough to 0 with negative slope, flip sign of next x angle
+    if self.sign > 0 and x < 0.09 and (np.sign(self.Xslope) == -1):   
         self.sign *= -1
 
-    
-#    print(self.Xpred)
-#    print(self.Xslope)
+    # If x is negative and gets close enough to 0 with postive slope, flip sign of next x angle
+    elif self.sign < 0 and x > -0.09 and (np.sign(self.Xslope) == 1):
+        self.sign *= -1
 
-    print(np.count_nonzero(self.prevNZ))
-# make sure we detected some movement before initializing
+    # make sure we detected some movement before initializing
     if np.count_nonzero(self.prevNZ) >=self.dequelength/2: 
-      roots = self.closestRoot(A,B,C)
-#      print(self.Zpred,self.Zslope)
-#      print("roots: ", roots[0:5])     
+      roots = self.closestRoot(A,B,C)  
       first= roots[0]
       z = first[0]
-      print("--------------")
-      print(self.Zpred, self.Zslope)
-      print("z",z, " roots: ", roots)
-      print("--------------")
 #      if first[1] > self.maxDiff:
 #        z = self.Zpred
+      
 
-      self.prevNZ.append(z)
-    else:
+    # Begin detection by using quadrant 1 solution
+    else: 
       z = np.arccos(self.bound(-B/np.sin(np.arccos(C))))
-      self.prevNZ.append(z)
+      
 
-
-    #
-#    for i in range(len(sol)):
-#      if sol[i]>2:
-#        sol[i] = 2.0
-#        print("OVERFLOW+")
-#      elif sol[i]< -2 :
-#        sol[i] = -2.0   
-#        print("OVERFLOW-")
+    # add z,x to deque of the last N values 
+    self.prevNZ.append(z)
     self.prevNX.append(x)
-    
-    
-#    print(self.prevNX)
     self.prevX = x
     self.prevZ = z 
     return round(x,5),round(z,5)
@@ -264,54 +273,33 @@ class image_converter:
       self.cv_image2 = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
-    #cv2.imwrite('image_copy.png', cv_image)
-#    print("prev:",self.prev)
-    
-    
+
     centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
     centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
+
     self.hasMissing = np.any(not_here_1) == True or np.any(not_here_2) ==True
     centers = self.combine(centersYZ,not_here_1,centersXZ,not_here_2)
-    
-    xpos,ypos = centers[2][0],centers[2][1]
-
-    if xpos >=0 and ypos >=0: q = 1
-    elif xpos <=0 and ypos >=0: q = 2
-    elif xpos <=0 and ypos <=0: q = 3
-    elif xpos >=0 and ypos <=0: q = 4
-    else: q = 1 
-    
     self.prevCenters = centers
+
     normVecs = self.calcNormVecs(centers)
 
     self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],q,self.hasMissing)
-
     self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
-    print(normVecs[1],normVecs[2],self.j1,self.j3)
+    # print(normVecs[1],normVecs[2],self.j1,self.j3)
     # cv2.imshow('window', cv_image)
     # cv2.waitKey(3)
 
-    self.joint1 = Float64()
-    self.joint3 = Float64()
-    self.joint4 = Float64()
-    self.quad = Float64()
-    self.predZ = Float64()
-    self.joint1.data = self.j1
-    self.joint3.data = self.j3
-    self.joint4.data = self.j4
-    self.quad.data = q
-    self.predZ.data= self.Zpred
-
-    self.predictedZ.publish(self.predZ)
+    self.joint1,self.joint3,self.joint4 = Float64(),Float64(),Float64()
+    self.joint1.data,self.joint3.data,self.joint4.data = self.j1,self.j3,self.j4
+        
     self.joint_angle_1.publish(self.joint1)
     self.joint_angle_3.publish(self.joint3)
     self.joint_angle_4.publish(self.joint4)
-    self.quadrant.publish(self.quad)
-    
-    
-    
 
+    self.predZ = Float64()
+    self.predZ.data= self.Zpred
+    self.predictedZ.publish(self.predZ)
 
     # Publish the results
     try:
