@@ -266,9 +266,11 @@ class image_converter:
       first= roots[0]
       z = first[0]
 
-      z = (1/2)*self.Zpred + (1/2)*z 
-#      if first[1] > self.maxDiff:
-#        z = self.Zpred
+      
+      if first[1] > self.maxDiff:
+        z = (2/3)*self.Zpred + (1/3)*z 
+      else:
+        z = (1/3)*self.Zpred + (2/3)*z 
       
 
     # Begin detection by using quadrant 1 solution
