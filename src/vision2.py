@@ -219,6 +219,9 @@ class image_converter:
 
     y = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.ySign
 
+    if np.count_nonzero(self.prevNY)>=self.dequelength/2:
+      y = (self.Ypred + y)/2
+
     if self.ySign > 0 and y < 0.09 and (np.sign(self.Yslope) == -1):   
         self.ySign *= -1
     # If y is negative and gets close enough to 0 with postive slope, flip sign of next x angle
