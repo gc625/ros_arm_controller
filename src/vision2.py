@@ -260,7 +260,7 @@ class image_converter:
   def angle_fromdot(self,vec1,vec2):
     self.linregY()
     if np.count_nonzero(self.prevNY)>=self.dequelength/2:
-      y = closestYRoot(vec1,vec2)
+      y = self.closestYRoot(vec1,vec2)
     else:
       y = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
 
