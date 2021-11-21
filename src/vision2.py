@@ -265,7 +265,8 @@ class image_converter:
       roots = self.closestRoot(A,B,C)  
       first= roots[0]
       z = first[0]
-      z = (1/2)*self.predZ + np.float((1/2)*z )
+
+      z = (1/2)*self.Zpred + (1/2)*z 
 #      if first[1] > self.maxDiff:
 #        z = self.Zpred
       
