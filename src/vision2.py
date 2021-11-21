@@ -223,13 +223,11 @@ class image_converter:
 
   def closestXRoot(self,C):
     roots = []
-    r1 = self.sign*np.arccos(C)
-    r2 = -1*self.sign*np.arccos(C)
-    d1 = abs(r1-self.Xpred)
-    d2 = abs(r2-self.Xpred)
-
+    r1,d1 = self.sign*np.arccos(C),abs(r1-self.Xpred)
+    r2,d2 = -1*self.sign*np.arccos(C),abs(r2-self.Xpred)
     roots.append((r1,d1))
     roots.append((r2,d2))
+
     roots.sort(key=lambda x:x[1])
     CalculatedX,firstDiff = roots[0][0], roots[0][1] 
        
@@ -240,21 +238,27 @@ class image_converter:
 
     return x 
 
+  def closestYRoot(self,vec1,vec2):
+    roots = []
+    r1,d1 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0)),abs(r1-self.Ypred)
+    r2,d2 = -1*np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0)),abs(r2-self.Ypred)
+    roots.append((r1,d1))
+    roots.append((r2,d2))
+    roots.sort(key=lambda x:x[1])
+    CalculatedY,firstDiff = roots[0][0], roots[0][1] 
+    if firstDiff > self.maxDiff:
+      y = (4/5)*self.Ypred + (1/5)*CalculatedY
+    else:
+      y = (1/3)*self.Ypred + (2/3)*CalculatedY
+
+    return y
 
   def angle_fromdot(self,vec1,vec2):
     self.linregY()
-
-    y = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))*self.ySign
-
     if np.count_nonzero(self.prevNY)>=self.dequelength/2:
-      y = (2/5)*self.Ypred + (3/5)*y
-
-    if self.ySign > 0 and y < 0.09 and (np.sign(self.Yslope) == -1):   
-        self.ySign *= -1
-    # If y is negative and gets close enough to 0 with postive slope, flip sign of next x angle
-    elif self.ySign < 0 and y > -0.09 and (np.sign(self.Yslope) == 1):
-        self.ySign *= -1
-
+      y = closestYRoot(vec1,vec2)
+    else:
+      y = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
 
     self.prevNY.append(y)
 
@@ -279,14 +283,6 @@ class image_converter:
       else:
         x = np.arccos(C)
     
-
-    # If x is positive and gets close enough to 0 with negative slope, flip sign of next x angle
-    # if self.sign > 0 and x < 0.09 and (np.sign(self.Xslope) == -1):   
-    #     self.sign *= -1
-
-    # # If x is negative and gets close enough to 0 with postive slope, flip sign of next x angle
-    # elif self.sign < 0 and x > -0.09 and (np.sign(self.Xslope) == 1):
-    #     self.sign *= -1
 
     # make sure we detected some movement before initializing
     if np.count_nonzero(self.prevNZ) >=self.dequelength/2: 
