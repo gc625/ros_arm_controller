@@ -58,7 +58,7 @@ class image_converter:
     self.Zpred = 0 
     self.Xslope = 0
     self.sign = 1 
-    self.ySign
+    self.ySign = 1 
     
 
 
