@@ -268,7 +268,7 @@ class image_converter:
 
       
       if first[1] > self.maxDiff:
-        z = (2/3)*self.Zpred + (1/3)*z 
+        z = (4/5)*self.Zpred + (1/5)*z 
       else:
         z = (1/3)*self.Zpred + (2/3)*z 
       
