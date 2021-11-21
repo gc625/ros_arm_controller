@@ -32,6 +32,9 @@ class image_converter:
     self.joint_angle_4 = rospy.Publisher("joint_angle_4",Float64, queue_size=10)
     self.quadrant = rospy.Publisher("quadrant",Float64,queue_size = 10)
     self.predictedZ = rospy.Publisher("predictedZ",Float64,queue_size = 10)
+    self.joint_1_error = rospy.Publisher("joint_1_error",Float64, queue_size=10)
+    self.joint_3_error = rospy.Publisher("joint_3_error",Float64, queue_size=10)
+    self.joint_4_error = rospy.Publisher("joint_4_error",Float64, queue_size=10)
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
@@ -41,6 +44,10 @@ class image_converter:
     # initialize 2 subscribers to get img data
     self.image_sub = rospy.Subscriber("/camera1/robot/image_raw",Image,self.callback1)
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw", Image, self.callback2)
+
+    self.actual_joints = rospy.Subscriber("/robot/joints_position_controller/command",Image,self.callback1)
+    
+    
     '''
     given a 2D image, return a List[np.array[(x,y)]] 
     representing the center of the green,yellow, blue,red joints
@@ -60,8 +67,14 @@ class image_converter:
     self.sign = 1 
     self.ySign = 1 
     
+    self.joint_1_actual = 0
+    self.joint_3_actual = 0
+    self.joint_4_actual = 0 
 
-
+  def getActual(self,data):
+    self.joint_1_actual = data[0]
+    self.joint_3_actual = data[1]
+    self.joint_4_actual = data[2]
 
   def callback1(self, data):
     
@@ -334,6 +347,15 @@ class image_converter:
     self.joint_angle_1.publish(self.joint1)
     self.joint_angle_3.publish(self.joint3)
     self.joint_angle_4.publish(self.joint4)
+
+    self.error1,self.error3,self.error4 = Float64(),Float64(),Float64()
+    self.error1.data = abs(self.joint1-self.joint_1_actual)
+    self.error3.data = abs(self.joint3-self.joint_3_actual) 
+    self.error4.data = abs(self.joint4-self.joint_4_actual) 
+
+    self.joint_1_error.publish(error1)
+    self.joint_3_error.publish(error3)
+    self.joint_4_error.publish(error4)
 
     self.predZ = Float64()
     self.predZ.data= self.Zpred
