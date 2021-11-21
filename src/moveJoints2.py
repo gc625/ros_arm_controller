@@ -30,7 +30,7 @@ class joint_pub:
     
     
     while not rospy.is_shutdown():
-      for i in ((x/50) for x in range(int(0*50)+1, int(140*50)+1)):
+      for i in ((x/50) for x in range(int(0*50)+1, int(280*50)+1)):
         rospy.get_time()
         cur_time = rospy.get_time() - t0
         print(cur_time,":",i)
@@ -51,13 +51,10 @@ class joint_pub:
 	
         joint_angles = Float64MultiArray()
         joint_angles.data = np.array([j1, j3, j4])
-        bag.write('joint1',joint1)
-        bag.write('joint3',joint3)
-        bag.write('joint4',joint4)
-        bag.write('time', runtime)
+
         
         joint_time.publish(runtime)
-
+        robot_joints.publish(joint_angles.data)
         robot_joint1_pub.publish(joint1)
         robot_joint3_pub.publish(joint3)
         robot_joint4_pub.publish(joint4)
