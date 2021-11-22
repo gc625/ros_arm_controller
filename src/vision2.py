@@ -76,9 +76,9 @@ class image_converter:
     
     # print(list(data))
 
-    self.joint_1_actual = float(data(0))
-    self.joint_3_actual = float(data(1))
-    self.joint_4_actual = float(data(2))
+    self.joint_1_actual = float(data.data[0])
+    self.joint_3_actual = float(data.data[1])
+    self.joint_4_actual = float(data.data[2])
 
   def callback1(self, data):
     
