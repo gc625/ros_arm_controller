@@ -72,13 +72,13 @@ class image_converter:
     self.joint_3_actual = 0.
     self.joint_4_actual = 0.
 
-  def getActual(self,data):
+  # def getActual(self,data):
     
-    # print(list(data))
+  #   # print(list(data))
 
-    self.joint_1_actual = float(data.data[0])
-    self.joint_3_actual = float(data.data[1])
-    self.joint_4_actual = float(data.data[2])
+  #   self.joint_1_actual = float(data.data[0])
+  #   self.joint_3_actual = float(data.data[1])
+  #   self.joint_4_actual = float(data.data[2])
 
   def callback1(self, data):
     
@@ -328,7 +328,7 @@ class image_converter:
       self.cv_image2 = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
-
+    print("in here?")
     centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
     centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
 
@@ -352,14 +352,14 @@ class image_converter:
     self.joint_angle_3.publish(self.joint3)
     self.joint_angle_4.publish(self.joint4)
 
-    self.error1,self.error3,self.error4 = Float64(),Float64(),Float64()
-    self.error1.data = abs(self.j1-self.joint_1_actual)
-    self.error3.data = abs(self.j3-self.joint_3_actual)
-    self.error4.data = abs(self.j4-self.joint_4_actual)
+    # self.error1,self.error3,self.error4 = Float64(),Float64(),Float64()
+    # self.error1.data = abs(self.j1-self.joint_1_actual)
+    # self.error3.data = abs(self.j3-self.joint_3_actual)
+    # self.error4.data = abs(self.j4-self.joint_4_actual)
 
-    self.joint_1_error.publish(self.error1)
-    self.joint_3_error.publish(self.error3)
-    self.joint_4_error.publish(self.error4)
+    # self.joint_1_error.publish(self.error1)
+    # self.joint_3_error.publish(self.error3)
+    # self.joint_4_error.publish(self.error4)
 
     # self.predZ = Float64()
     # self.predZ.data= self.Zpred
