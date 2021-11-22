@@ -42,7 +42,7 @@ class image_converter:
     # initialize a publisher to send images from camera2 to a topic named image_topic2
     self.image_pub2 = rospy.Publisher("image_topic2", Image, queue_size=1)
     # initialize 2 subscribers to get img data
-    self.actual_joints = rospy.Subscriber("/robot/joints_position_controller/command",Image,self.getActual)
+    self.actual_joints = rospy.Subscriber("/robot/joints_position_controller/command",Float64MultiArray,self.getActual)
     self.image_sub = rospy.Subscriber("/camera1/robot/image_raw",Image,self.callback1)
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw", Image, self.callback2)
 
