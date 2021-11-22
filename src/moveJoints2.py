@@ -55,9 +55,9 @@ class joint_pub:
         
         # joint_time.publish(runtime)
         robot_joints_pub.publish(joint_angles)
-        # robot_joint1_pub.publish(joint1)
-        # robot_joint3_pub.publish(joint3)
-        # robot_joint4_pub.publish(joint4)
+        robot_joint1_pub.publish(joint1)
+        robot_joint3_pub.publish(joint3)
+        robot_joint4_pub.publish(joint4)
 
         rate.sleep()
         #if (cur_time >= 10):

@@ -32,9 +32,9 @@ class image_converter:
     self.joint_angle_4 = rospy.Publisher("joint_angle_4",Float64, queue_size=10)
     self.quadrant = rospy.Publisher("quadrant",Float64,queue_size = 10)
     self.predictedZ = rospy.Publisher("predictedZ",Float64,queue_size = 10)
-    self.joint_1_error = rospy.Publisher("joint_1_error",Float64, queue_size=10)
-    self.joint_3_error = rospy.Publisher("joint_3_error",Float64, queue_size=10)
-    self.joint_4_error = rospy.Publisher("joint_4_error",Float64, queue_size=10)
+    # self.joint_1_error = rospy.Publisher("joint_1_error",Float64, queue_size=10)
+    # self.joint_3_error = rospy.Publisher("joint_3_error",Float64, queue_size=10)
+    # self.joint_4_error = rospy.Publisher("joint_4_error",Float64, queue_size=10)
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
@@ -337,7 +337,7 @@ class image_converter:
     self.prevCenters = centers
 
     normVecs = self.calcNormVecs(centers)
-    print(normVecs[1])
+    
     self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
     self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
