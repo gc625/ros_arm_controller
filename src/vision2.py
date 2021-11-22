@@ -74,8 +74,8 @@ class image_converter:
 
   def getActual(self,data):
     
-    print(data)
-    
+    print(list(data))
+
     self.joint_1_actual = float(data[0])
     self.joint_3_actual = float(data[1])
     self.joint_4_actual = float(data[2])
