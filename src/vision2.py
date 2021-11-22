@@ -8,7 +8,7 @@ import numpy as np
 from sympy import *
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64,Float64MultiArray
 from cv_bridge import CvBridge, CvBridgeError
 from collections import deque 
 from sklearn.linear_model import LinearRegression
