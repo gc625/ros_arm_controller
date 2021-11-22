@@ -353,9 +353,9 @@ class image_converter:
     self.joint_angle_4.publish(self.joint4)
 
     self.error1,self.error3,self.error4 = Float64(),Float64(),Float64()
-    self.error1.data = round(abs(self.j1-self.joint_1_actual),5)/round(self.joint_1_actual,5)
-    self.error3.data = round(abs(self.j3-self.joint_3_actual),5)/round(self.joint_3_actual,5)
-    self.error4.data = round(abs(self.j4-self.joint_4_actual),5)/round(self.joint_4_actual,5)
+    self.error1.data = round(abs(self.j1-self.joint_1_actual),5)/round(abs(self.joint_1_actual),5)
+    self.error3.data = round(abs(self.j3-self.joint_3_actual),5)/round(abs(self.joint_3_actual),5)
+    self.error4.data = round(abs(self.j4-self.joint_4_actual),5)/round(abs(self.joint_4_actual),5)
 
     self.joint_1_error.publish(self.error1)
     self.joint_3_error.publish(self.error3)
