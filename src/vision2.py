@@ -337,7 +337,7 @@ class image_converter:
     self.prevCenters = centers
 
     normVecs = self.calcNormVecs(centers)
-    
+
     self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
     self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
@@ -353,9 +353,9 @@ class image_converter:
     self.joint_angle_4.publish(self.joint4)
 
     self.error1,self.error3,self.error4 = Float64(),Float64(),Float64()
-    self.error1.data = abs(self.j1-self.joint_1_actual)
-    self.error3.data = abs(self.j3-self.joint_3_actual)
-    self.error4.data = abs(self.j4-self.joint_4_actual)
+    self.error1.data = abs(self.j1-self.joint_1_actual)/self.joint_1_actual
+    self.error3.data = abs(self.j3-self.joint_3_actual)/self.joint_3_actual
+    self.error4.data = abs(self.j4-self.joint_4_actual)/self.joint_4_actual
 
     self.joint_1_error.publish(self.error1)
     self.joint_3_error.publish(self.error3)
