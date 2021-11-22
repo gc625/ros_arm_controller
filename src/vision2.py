@@ -328,7 +328,7 @@ class image_converter:
       self.cv_image2 = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
-    print("in here?")
+
     centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
     centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
 
@@ -337,7 +337,7 @@ class image_converter:
     self.prevCenters = centers
 
     normVecs = self.calcNormVecs(centers)
-
+    print(normVecs[1])
     self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
     self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
