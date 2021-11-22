@@ -20,7 +20,7 @@ class joint_pub:
     robot_joint4_pub = rospy.Publisher("/robot/joint4_position_controller/command", Float64, queue_size=10)
     rate = rospy.Rate(50)  # 50hz
     # initialize a publisher for end effector target positions
-    robot_joints_pub = rospy.Publisher("/robot/joints_position_controller/command", Float64MultiArray, queue_size=10)
+    robot_joints_pub = rospy.Publisher("joints_actual", Float64MultiArray, queue_size=10)
     joint_time = rospy.Publisher("time", Float64, queue_size=10)
 
     bag = rosbag.Bag('test.bag', 'w')
