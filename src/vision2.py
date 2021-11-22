@@ -42,7 +42,7 @@ class image_converter:
     # initialize a publisher to send images from camera2 to a topic named image_topic2
     self.image_pub2 = rospy.Publisher("image_topic2", Image, queue_size=1)
     # initialize 2 subscribers to get img data
-    self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
+    # self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
     self.image_sub = rospy.Subscriber("/camera1/robot/image_raw",Image,self.callback1)
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw", Image, self.callback2)
 
@@ -361,9 +361,9 @@ class image_converter:
     self.joint_3_error.publish(self.error3)
     self.joint_4_error.publish(self.error4)
 
-    self.predZ = Float64()
-    self.predZ.data= self.Zpred
-    self.predictedZ.publish(self.predZ)
+    # self.predZ = Float64()
+    # self.predZ.data= self.Zpred
+    # self.predictedZ.publish(self.predZ)
 
     # Publish the results
     try:
