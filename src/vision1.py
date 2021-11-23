@@ -183,20 +183,6 @@ class image_converter:
     else: return num
 
 
-
-  def angle_fromdot(self,vec1,vec2):
-    self.linregY2()
-
-    if np.count_nonzero(self.prevNY2)>=self.dequelength/2:
-      y2 = self.closestY2Root(vec1,vec2)
-    else:
-      y2 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
-
-    self.prevNY2.append(y2)
-
-    return y2
-
-
   def closestXRoot(self,B):
     roots = []
     r1 = np.arcsin(self.bound(-B))
@@ -242,7 +228,35 @@ class image_converter:
     return y
 
 
+  def closestY2Root(self):
+    roots = []
+    r1 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
+    d1 = abs(r1-self.Y2pred)
+    r2 = -1*np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
+    d2 = abs(r2-self.Y2pred)
+    roots.append((r1,d1))
+    roots.append((r2,d2))
+    roots.sort(key=lambda x:x[1])
+    CalculatedY2,firstDiff = roots[0][0], roots[0][1] 
+    if firstDiff > self.maxDiff:
+      y2 = (4/5)*self.Y2pred + (1/5)*CalculatedY2
+    else:
+      y2 = (2/5)*self.Y2pred + (3/5)*CalculatedY2
 
+    return y2
+
+
+  def angle_fromdot(self,vec1,vec2):
+    self.linregY2()
+
+    if np.count_nonzero(self.prevNY2)>=self.dequelength/2:
+      y2 = self.closestY2Root(vec1,vec2)
+    else:
+      y2 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
+
+    self.prevNY2.append(y2)
+
+    return y2
 
   def angles_rotMat(self,prev,cur,hasMissing):
     
