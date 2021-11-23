@@ -169,7 +169,7 @@ class image_converter:
     self.Ypred = Y_pref
     self.Yslope = model.coef_[0]
 
-  def linregY(self):
+  def linregY2(self):
     t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
     Y2 = np.array(self.prevNY2)
     model = LinearRegression().fit(t, Y2)
