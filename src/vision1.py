@@ -29,6 +29,11 @@ class image_converter:
     self.joint_angle_2 = rospy.Publisher("joint_angle_2",Float64, queue_size=10)
     self.joint_angle_3 = rospy.Publisher("joint_angle_3",Float64, queue_size=10)
     self.joint_angle_4 = rospy.Publisher("joint_angle_4",Float64, queue_size=10)
+
+    self.joint_2_error = rospy.Publisher("joint_2_error",Float64, queue_size=10)
+    self.joint_3_error = rospy.Publisher("joint_3_error",Float64, queue_size=10)
+    self.joint_4_error = rospy.Publisher("joint_4_error",Float64, queue_size=10)
+    
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
@@ -38,15 +43,42 @@ class image_converter:
     # initialize 2 subscribers to get img data
     self.image_sub = rospy.Subscriber("/camera1/robot/image_raw",Image,self.callback1)
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw", Image, self.callback2)
-    '''
-    given a 2D image, return a List[np.array[(x,y)]] 
-    representing the center of the green,yellow, blue,red joints
-    in that order. 
-    '''
-    self.prev= []
+    self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
+    
+    # maybe no need
+
     self.j2 = 0
     self.j3 = 0
+    self.prevCenters = [np.array([0,0,0]),np.array([0,0,0]),np.array([0,0,0])]
     
+
+
+    self.dequelength = 18
+    self.prevNY2 = deque([0]*self.dequelength,maxlen=self.dequelength)
+    self.prevNX = deque([0]*self.dequelength,maxlen=self.dequelength)
+    self.prevNY = deque([0]*self.dequelength,maxlen=self.dequelength)
+
+    self.maxDiff = 0.4
+
+    self.Zslope = 1
+    self.Zpred = 0 
+    self.Yslope = 0
+    self.Ypred = 0
+    self.Y2slope = 0
+    self.Y2pred = 0
+
+
+    self.joint_2_actual = 0.
+    self.joint_3_actual = 0.
+    self.joint_4_actual = 0.
+
+
+    
+  def getActual(self,data):
+    self.joint_1_actual = float(data.data[0])
+    self.joint_3_actual = float(data.data[1])
+    self.joint_4_actual = float(data.data[2])
+
 
   def callback1(self, data):
     
@@ -65,29 +97,26 @@ class image_converter:
       print(e)
 
   def detect_centers(self,image):
-    # Mask each joint
-#    rMask = cv2.inRange(image, (0, 0, 100), (0, 0, 255))
-#    gMask = cv2.inRange(image, (0, 100, 0), (0, 255, 0))
-#    bMask = cv2.inRange(image, (100, 0, 0), (255, 0, 0))
-#    yMask = cv2.inRange(image, (0, 100, 100), (0, 255, 255))
-
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
     yMask = cv2.inRange(hsv, (15, 0, 0), (36, 255, 255))
     bMask = cv2.inRange(hsv, (110, 50, 50), (130, 255, 255))
     gMask = cv2.inRange(hsv, (36, 0, 0), (70, 255, 255))
     rMask = cv2.inRange(hsv, (0, 70, 50), (10, 255, 255))
+
     masks = [gMask,yMask,bMask,rMask]
     kernel = np.ones((5, 5), np.uint8)
 
     centers = []
+
     # Calculate the center for each joint
-    not_here= [False,False,False,False]
+    missing= [False,False,False,False]
+
     for i,mask in enumerate(masks):
-      
       mask = cv2.dilate(mask, kernel, iterations=3)
+
+      # No contours signifies occulusion
       if(np.sum(mask) == 0):
-        not_here[i] = True
+        missing[i] = True
         centers.append(np.array([0,0]))
       else:
         M = cv2.moments(mask)
@@ -100,65 +129,139 @@ class image_converter:
 
     for i in range(len(centers)):
       centers[i] = np.array([centers[i][0] - newX, -1 * (centers[i][1] - newY)])
-    return centers,not_here 
+    return centers,missing 
 
   def combine(self,yz,not_here1,xz,not_here2):
     # averages z coord for now
     combined = []
-    nh1 = not_here1
-    nh2 = not_here2
     for i in range(len(yz)):
-      if(nh1[i] == True): # if a center is missing from cam 1  
-        combined.append(np.array((xz[i][0],0,yz[i][1])))
-      
-      elif(nh2[i] == True): # if center is missing from cam 2, 
-        combined.append(np.array((0,yz[i][0],xz[i][1])))
-#      print(xz[i],yz[i])    	
-
+      if(not_here1[i] == True): # if a center is missing from cam 1  
+        combined.append(np.array((xz[i][0],self.prevCenters[i][1],xz[i][1])))
+      elif(not_here2[i] == True): # if center is missing from cam 2, 
+        combined.append(np.array((self.prevCenters[i][0],yz[i][0],yz[i][1])))
       else:
         combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+yz[i][1])/2)))
-	
+  
     return combined
 
   def calcNormVecs(self,centers):
-    dist = []
     vecs = []
     for i in range(len(centers) - 1):
-      
       vecs.append((centers[i + 1] - centers[i]) / np.linalg.norm(centers[i + 1] - centers[i]))
-        # vecs.append((nodeCoords[i + 1] - nodeCoords[i]) / np.linalg.norm(nodeCoords[i + 1] - nodeCoords[i]))
-#        dist.append(np.linalg.norm(centers[i+1]-centers[i]))
-
     return vecs
 
-  def angles_rotMat(self,prev,cur):
-#    print("in here, ")
-    if(np.array_equal(prev,np.array([0,0,1]))):
-      y = np.arcsin(-cur[1])
-      x= np.arcsin(cur[0]/(np.cos(y)))
-      return y,x
-      
+  def linregX(self):
+    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    X = np.array(self.prevNX)
+    model = LinearRegression().fit(t, X)
+    X_pref = model.predict(np.array([self.dequelength+1]).reshape((-1,1)))[0]
+    
+    self.Xpred = X_pref
+    self.Xslope = model.coef_[0]
+  
+  def linregY(self):
+    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    Y = np.array(self.prevNY)
+    model = LinearRegression().fit(t, Y)
+    Y_pref = model.predict(np.array([self.dequelength+1]).reshape((-1,1)))[0]
+    self.Ypred = Y_pref
+    self.Yslope = model.coef_[0]
+
+  def linregY(self):
+    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    Y2 = np.array(self.prevNY2)
+    model = LinearRegression().fit(t, Y2)
+    y2_pref = model.predict(np.array([self.dequelength+1+0.5]).reshape((-1,1)))[0]
+    self.Y2pred = y2_pref
+    self.Y2slope = model.coef_[0]
+
+  def bound(self,num):
+    if num > 1: return 1
+    elif num <-1: return -1
+    else: return num
+
+
+  def closestXRoot(self,B):
+    roots = []
+    r1 = np.arcsin(-B)
+    d1 = abs(r1-self.Xpred)
+    r2 = -1*np.arcsin(-B)
+    d2 = abs(r2-self.Xpred)
+    roots.append((r1,d1))
+    roots.append((r2,d2))
+    roots.sort(key=lambda x:x[1])
+    CalculatedX,firstDiff = roots[0][0], roots[0][1] 
+       
+    if firstDiff > self.maxDiff:
+      x = (3/5)*self.Xpred + (2/5)*CalculatedX
     else:
-      a,b,c = prev[0],prev[1],prev[2]
+      x = (1/3)*self.Xpred + (2/3)*CalculatedX
 
-      x, y = symbols('x, y')
-      eq1 = Eq(cos(y)*a+sin(y)*sin(x)*b+sin(y)*cos(x)*c, cur[0])
-      eq2 = Eq(b*cos(x)-c*sin(x), cur[1])
+    return x 
 
 
-      sol = nsolve([eq1, eq2], [x, y],[1,1])
-      sol = [np.array(sol).astype(np.float64)[0][0],np.array(sol).astype(np.float64)[1][0]]
+  def closestY(self,A,C,x):
+    roots = []
+    r1 = np.arcsin(A/np.cos(x))
+    d1 = abs(r1-self.Ypred)
+    r2 = -1*np.arcsin(A/np.cos(x))
+    d2 = abs(r2-self.Ypred)
+    r3 = np.arccos(C/np.cos(x))
+    d3 = abs(r3-self.Ypred)
+    r4 = np.arccos(-1*C/np.cos(x))
+    d4 = abs(r4-self.Ypred)
+    roots.append((r1,d1))
+    roots.append((r2,d2))
+    roots.append((r3,d3))
+    roots.append((r4,d4))
     
+    roots.sort(key=lambda x:x[1])
+    CalculatedY,firstDiff = roots[0][0], roots[0][1] 
+
+    if firstDiff > self.maxDiff:
+      y = (4/5)*self.Ypred + (1/5)*CalculatedY
+    else:
+      y = (2/5)*self.Ypred + (3/5)*CalculatedY
+
+    return y
+
+
+  def angles_rotMat(self,prev,cur):
     
-      for i in range(len(sol)):
-        if sol[i]>2:
-          sol[i] = 2.0
-          print("OVERFLOW+")
-        elif sol[i]< -2 :
-          sol[i] = -2.0   
-          print("OVERFLOW-")
-    
-      return round(sol[0],5),round(sol[1],5)
+    a,b,c = prev[0],prev[1],prev[2]
+    A,B,C = cur[0],cur[1],self.bound(cur[2])
+
+
+    if np.count_nonzero(self.prevNX) >=5: 
+      self.linregX()
+
+
+    if hasMissing:
+      # x = self.prevX
+      x = self.Xpred
+#      x = self.prevNX[self.dequelength-1]
+    else:
+      if np.count_nonzero(self.prevNX) >=self.dequelength/2: 
+        x = self.closestXRoot(B)
+      else:
+        x = np.arcsin(-B)
+
+
+    if np.count_nonzero(self.prevNY) >=self.dequelength/2: 
+      y = self.closestYRoot(A,C,x)  
+    # Begin detection by using quadrant 1 solution
+    else: 
+      y = np.arcsin(A/np.cos(x)) 
+
+
+    self.prevNY.append(y)
+    self.prevNX.append(x)
+    self.prevX = x
+    self.prevY = y
+    return round(y,5),round(x,5)
+
+
+
     
   def callback2(self,data):
     # Recieve the image
@@ -167,35 +270,20 @@ class image_converter:
     except CvBridgeError as e:
       print(e)
 
-    # Perform image processing task (your code goes here)
-    # The image is loaded as cv_imag
 
-    # Uncomment if you want to save the image
-    #cv2.imwrite('image_copy.png', cv_image)
-    print("prev:",self.prev)
     
     
     centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
     centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
     
+    self.hasMissing = np.any(not_here_1) == True or np.any(not_here_2) ==True
     centers = self.combine(centersYZ,not_here_1,centersXZ,not_here_2)
-#    print(centersYZ, centersXZ)
-#    print(centers)
+    self.prevCenters = centers
+
     normVecs = self.calcNormVecs(centers)
-    
-    if ((np.array_equal(self.prev,[]))):
-      print("in INIT")
-      ans = self.angles_rotMat([0,0,1],normVecs[1])
-      self.j2+= ans[1]
-      self.j3 += ans[0]
-      self.prev = normVecs[1]
-#    _,j4 = self.angles_rotMat(normVecs[1],normVecs[2])
-    else:
-      ans = self.angles_rotMat(self.prev,normVecs[1])
-      self.j2 += ans[1]
-      self.j3 +=ans[0]
-      self.prev = normVecs[1]
-    print(self.j2,self.j3)
+
+    self.j2,self.j3 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
+    # self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
     # print("YZ",centersYZ)
     # print("XZ",centersXZ)
@@ -206,7 +294,7 @@ class image_converter:
 
     self.joint2 = Float64()
     self.joint3 = Float64()
-    self.joint4 = Float64()
+    # self.joint4 = Float64()
     self.joint2.data = self.j2 
     self.joint3.data = self.j3
 #    self.joint4.data = j4
