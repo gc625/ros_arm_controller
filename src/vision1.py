@@ -55,12 +55,14 @@ class image_converter:
     
 
 
-    self.dequelength = 18
-    self.prevNY2 = deque([0]*self.dequelength,maxlen=self.dequelength)
-    self.prevNX = deque([0]*self.dequelength,maxlen=self.dequelength)
-    self.prevNY = deque([0]*self.dequelength,maxlen=self.dequelength)
+    self.dequelengthX = 20
+    self.dequelengthY = 15
+    self.dequelengthY2 = 20
+    self.prevNY2 = deque([0]*self.dequelengthY2,maxlen=self.dequelengthY2)
+    self.prevNX = deque([0]*self.dequelengthX,maxlen=self.dequelengthX)
+    self.prevNY = deque([0]*self.dequelengthY,maxlen=self.dequelengthY)
 
-    self.maxDiff = 0.4
+    self.maxDiff = 0.2
 
     self.Zslope = 1
     self.Zpred = 0 
@@ -88,7 +90,7 @@ class image_converter:
     try:
     
       self.cv_image1 = self.bridge.imgmsg_to_cv2(data, "bgr8")
-      print(type(self.cv_image1))
+#      print(type(self.cv_image1))
     except CvBridgeError as e:
       print(e)
 
@@ -138,9 +140,9 @@ class image_converter:
     combined = []
     for i in range(len(yz)):
       if(not_here1[i] == True): # if a center is missing from cam 1  
-        combined.append(np.array((xz[i][0],self.prevCenters[i][1],xz[i][1])))
+        combined.append(np.array((xz[i][0],0,xz[i][1])))
       elif(not_here2[i] == True): # if center is missing from cam 2, 
-        combined.append(np.array((self.prevCenters[i][0],yz[i][0],yz[i][1])))
+        combined.append(np.array((0,yz[i][0],yz[i][1])))
       else:
         combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+yz[i][1])/2)))
   
@@ -153,27 +155,27 @@ class image_converter:
     return vecs
 
   def linregX(self):
-    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    t = np.array(list(range(1,self.dequelengthX+1))).reshape((-1, 1))
     X = np.array(self.prevNX)
     model = LinearRegression().fit(t, X)
-    X_pref = model.predict(np.array([self.dequelength+1]).reshape((-1,1)))[0]
+    X_pref = model.predict(np.array([self.dequelengthX+1]).reshape((-1,1)))[0]
     
     self.Xpred = X_pref
     self.Xslope = model.coef_[0]
   
   def linregY(self):
-    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    t = np.array(list(range(1,self.dequelengthY+1))).reshape((-1, 1))
     Y = np.array(self.prevNY)
     model = LinearRegression().fit(t, Y)
-    Y_pref = model.predict(np.array([self.dequelength+1]).reshape((-1,1)))[0]
+    Y_pref = model.predict(np.array([self.dequelengthY+1]).reshape((-1,1)))[0]
     self.Ypred = Y_pref
     self.Yslope = model.coef_[0]
 
   def linregY2(self):
-    t = np.array(list(range(1,self.dequelength+1))).reshape((-1, 1))
+    t = np.array(list(range(1,self.dequelengthY2+1))).reshape((-1, 1))
     Y2 = np.array(self.prevNY2)
     model = LinearRegression().fit(t, Y2)
-    y2_pref = model.predict(np.array([self.dequelength+1+0.5]).reshape((-1,1)))[0]
+    y2_pref = model.predict(np.array([self.dequelengthY2+1.2]).reshape((-1,1)))[0]
     self.Y2pred = y2_pref
     self.Y2slope = model.coef_[0]
 
@@ -195,9 +197,9 @@ class image_converter:
     CalculatedX,firstDiff = roots[0][0], roots[0][1] 
        
     if firstDiff > self.maxDiff:
-      x = (3/5)*self.Xpred + (2/5)*CalculatedX
+      x = (0.25)*self.Xpred + (.75)*CalculatedX
     else:
-      x = (1/3)*self.Xpred + (2/3)*CalculatedX
+      x = (0)*self.Xpred + (3/3)*CalculatedX
 
     return x 
 
@@ -206,24 +208,25 @@ class image_converter:
     roots = []
     r1 = np.arcsin(self.bound(A/np.cos(x)))
     d1 = abs(r1-self.Ypred)
-    r2 = -1*np.arcsin(self.bound(A/np.cos(x)))
-    d2 = abs(r2-self.Ypred)
-    r3 = np.arccos(self.bound(C/np.cos(x)))
-    d3 = abs(r3-self.Ypred)
-    r4 = np.arccos(self.bound(-1*C/np.cos(x)))
-    d4 = abs(r4-self.Ypred)
+#    r2 = -1*np.arcsin(self.bound(A/np.cos(x)))
+#    d2 = abs(r2-self.Ypred)
+#    r3 = np.arccos(self.bound(C/np.cos(x)))
+#    d3 = abs(r3-self.Ypred)
+#    r4 = np.arccos(self.bound(-1*C/np.cos(x)))
+#    d4 = abs(r4-self.Ypred) 
+    
     roots.append((r1,d1))
-    roots.append((r2,d2))
-    roots.append((r3,d3))
-    roots.append((r4,d4))
+#    roots.append((r2,d2))
+#    roots.append((r3,d3))
+#    roots.append((r4,d4))
     
     roots.sort(key=lambda x:x[1])
     CalculatedY,firstDiff = roots[0][0], roots[0][1] 
 
     if firstDiff > self.maxDiff:
-      y = (4/5)*self.Ypred + (1/5)*CalculatedY
+      y = (0.7)*self.Ypred + (0.3)*CalculatedY
     else:
-      y = (2/5)*self.Ypred + (3/5)*CalculatedY
+      y = (1/5)*self.Ypred + (4/5)*CalculatedY
 
     return y
 
@@ -239,7 +242,7 @@ class image_converter:
     roots.sort(key=lambda x:x[1])
     CalculatedY2,firstDiff = roots[0][0], roots[0][1] 
     if firstDiff > self.maxDiff:
-      y2 = (4/5)*self.Y2pred + (1/5)*CalculatedY2
+      y2 = (0.7)*self.Y2pred + (0.3)*CalculatedY2
     else:
       y2 = (2/5)*self.Y2pred + (3/5)*CalculatedY2
 
@@ -249,7 +252,7 @@ class image_converter:
   def angle_fromdot(self,vec1,vec2):
     self.linregY2()
 
-    if np.count_nonzero(self.prevNY2)>=self.dequelength/2:
+    if np.count_nonzero(self.prevNY2)>=self.dequelengthY2/2:
       y2 = self.closestY2Root(vec1,vec2)
     else:
       y2 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
@@ -261,27 +264,27 @@ class image_converter:
   def angles_rotMat(self,prev,cur,hasMissing):
     
     a,b,c = prev[0],prev[1],prev[2]
-    A,B,C = cur[0],cur[1],self.bound(cur[2])
+    A,B,C = cur[0],cur[1],cur[2]
 
 
-    if np.count_nonzero(self.prevNX) >=5: 
-      self.linregX()
-
+#    if np.count_nonzero(self.prevNX) >=5: 
+    self.linregX()
+    self.linregY()
 
     if hasMissing:
       # x = self.prevX
       x = self.Xpred
 #      x = self.prevNX[self.dequelength-1]
     else:
-      if np.count_nonzero(self.prevNX) >=self.dequelength/2: 
+      if np.count_nonzero(self.prevNX) >=self.dequelengthX/2: 
         x = self.closestXRoot(B)
       else:
         x = np.arcsin(self.bound(-B))
 
 
-    if np.count_nonzero(self.prevNY) >=self.dequelength/2: 
-      y = np.arcsin(self.bound(A/np.cos(x)))
-      # y = self.closestYRoot(A,C,x)  
+    if np.count_nonzero(self.prevNY) >=self.dequelengthY/2: 
+#      y = np.arcsin(self.bound(A/np.cos(x)))
+      y = self.closestYRoot(A,C,x)  
     # Begin detection by using quadrant 1 solution
     else: 
       y = np.arcsin(self.bound(A/np.cos(x)))
@@ -304,7 +307,9 @@ class image_converter:
       print(e)
 
 
-    
+    self.linregX()
+    self.linregY()
+    self.linregY2()
     
     centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
     centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
@@ -314,8 +319,9 @@ class image_converter:
     self.prevCenters = centers
 
     normVecs = self.calcNormVecs(centers)
-
+    
     self.j2,self.j3 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
+    print(normVecs[1])
     self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
 
