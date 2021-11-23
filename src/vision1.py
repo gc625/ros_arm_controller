@@ -188,7 +188,7 @@ class image_converter:
     self.linregY2()
 
     if np.count_nonzero(self.prevNY2)>=self.dequelength/2:
-      y2 = self.closestYRoot(vec1,vec2)
+      y2 = self.closestY2Root(vec1,vec2)
     else:
       y2 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
 
