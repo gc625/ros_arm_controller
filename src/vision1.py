@@ -228,7 +228,7 @@ class image_converter:
     return y
 
 
-  def closestY2Root(self):
+  def closestY2Root(self,vec1,vec2):
     roots = []
     r1 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
     d1 = abs(r1-self.Y2pred)
