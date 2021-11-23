@@ -64,7 +64,10 @@ class image_converter:
     self.maxDiff = 0.4
     self.Zslope = 1
     self.Zpred = 0 
+    self.Xpred = 0
     self.Xslope = 0
+    self.Ypred = 0
+    self.Yslope = 0
     self.sign = 1 
     self.ySign = 1 
     
@@ -288,12 +291,12 @@ class image_converter:
     
   def angles_rotMat(self,prev,cur,hasMissing):
     
-    if np.count_nonzero(self.prevNX) >=5: 
-      self.linregX()
+
     
     a,b,c = prev[0],prev[1],prev[2]
     A,B,C = cur[0],cur[1],self.bound(cur[2])
-    
+    if np.count_nonzero(self.prevNX) >=5: 
+      self.linregX()
     if hasMissing:
       # x = self.prevX
       x = self.Xpred
@@ -304,7 +307,7 @@ class image_converter:
       else:
         x = np.arccos(C)
     
-
+#    print(x)
     # make sure we detected some movement before initializing
     if np.count_nonzero(self.prevNZ) >=self.dequelength/2: 
       z = self.closestZRoot(A,B,x)  
