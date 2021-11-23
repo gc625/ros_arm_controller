@@ -202,7 +202,7 @@ class image_converter:
     return x 
 
 
-  def closestY(self,A,C,x):
+  def closestYRoot(self,A,C,x):
     roots = []
     r1 = np.arcsin(A/np.cos(x))
     d1 = abs(r1-self.Ypred)
