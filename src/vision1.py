@@ -43,7 +43,7 @@ class image_converter:
     # initialize 2 subscribers to get img data
     self.image_sub = rospy.Subscriber("/camera1/robot/image_raw",Image,self.callback1)
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw", Image, self.callback2)
-    self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
+    # self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
     
     # maybe no need
 
