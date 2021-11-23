@@ -317,11 +317,11 @@ class image_converter:
     self.joint4 = Float64()
     self.joint2.data = self.j2 
     self.joint3.data = self.j3
-   self.joint4.data = j4
+    self.joint4.data = self.j4
     
     self.joint_angle_2.publish(self.joint2)
     self.joint_angle_3.publish(self.joint3)
-   self.joint_angle_4.publish(self.joint4)
+    self.joint_angle_4.publish(self.joint4)
     
     
     
