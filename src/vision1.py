@@ -183,6 +183,20 @@ class image_converter:
     else: return num
 
 
+
+  def angle_fromdot(self,vec1,vec2):
+    self.linregY2()
+
+    if np.count_nonzero(self.prevNY2)>=self.dequelength/2:
+      y2 = self.closestYRoot(vec1,vec2)
+    else:
+      y2 = np.arccos(np.clip(np.dot(vec1, vec2), -1.0, 1.0))
+
+    self.prevNY2.append(y2)
+
+    return y2
+
+
   def closestXRoot(self,B):
     roots = []
     r1 = np.arcsin(self.bound(-B))
@@ -226,6 +240,8 @@ class image_converter:
       y = (2/5)*self.Ypred + (3/5)*CalculatedY
 
     return y
+
+
 
 
   def angles_rotMat(self,prev,cur,hasMissing):
@@ -286,7 +302,8 @@ class image_converter:
     normVecs = self.calcNormVecs(centers)
 
     self.j2,self.j3 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
-    # self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
+    self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
+
 
     # print("YZ",centersYZ)
     # print("XZ",centersXZ)
@@ -297,14 +314,14 @@ class image_converter:
 
     self.joint2 = Float64()
     self.joint3 = Float64()
-    # self.joint4 = Float64()
+    self.joint4 = Float64()
     self.joint2.data = self.j2 
     self.joint3.data = self.j3
-#    self.joint4.data = j4
+   self.joint4.data = j4
     
     self.joint_angle_2.publish(self.joint2)
     self.joint_angle_3.publish(self.joint3)
-#    self.joint_angle_4.publish(joint4)
+   self.joint_angle_4.publish(self.joint4)
     
     
     
