@@ -185,9 +185,9 @@ class image_converter:
 
   def closestXRoot(self,B):
     roots = []
-    r1 = np.arcsin(-B)
+    r1 = np.arcsin(self.bound(-B))
     d1 = abs(r1-self.Xpred)
-    r2 = -1*np.arcsin(-B)
+    r2 = -1*np.arcsin(self.bound(-B))
     d2 = abs(r2-self.Xpred)
     roots.append((r1,d1))
     roots.append((r2,d2))
@@ -204,13 +204,13 @@ class image_converter:
 
   def closestYRoot(self,A,C,x):
     roots = []
-    r1 = np.arcsin(A/np.cos(x))
+    r1 = np.arcsin(self.bound(A/np.cos(x)))
     d1 = abs(r1-self.Ypred)
-    r2 = -1*np.arcsin(A/np.cos(x))
+    r2 = -1*np.arcsin(self.bound(A/np.cos(x)))
     d2 = abs(r2-self.Ypred)
-    r3 = np.arccos(C/np.cos(x))
+    r3 = np.arccos(self.bound(C/np.cos(x)))
     d3 = abs(r3-self.Ypred)
-    r4 = np.arccos(-1*C/np.cos(x))
+    r4 = np.arccos(self.bound(-1*C/np.cos(x)))
     d4 = abs(r4-self.Ypred)
     roots.append((r1,d1))
     roots.append((r2,d2))
@@ -246,14 +246,14 @@ class image_converter:
       if np.count_nonzero(self.prevNX) >=self.dequelength/2: 
         x = self.closestXRoot(B)
       else:
-        x = np.arcsin(-B)
+        x = np.arcsin(self.bound(-B))
 
 
     if np.count_nonzero(self.prevNY) >=self.dequelength/2: 
       y = self.closestYRoot(A,C,x)  
     # Begin detection by using quadrant 1 solution
     else: 
-      y = np.arcsin(A/np.cos(x)) 
+      y = np.arcsin(self.bound(A/np.cos(x)))
 
 
     self.prevNY.append(y)
