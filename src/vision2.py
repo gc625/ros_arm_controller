@@ -65,17 +65,14 @@ class image_converter:
     self.Zslope = 1
     self.Zpred = 0 
     self.Xslope = 0
-    self.sign = 1 
-    self.ySign = 1 
+    
+    
     
     self.joint_1_actual = 0.
     self.joint_3_actual = 0.
     self.joint_4_actual = 0.
 
   def getActual(self,data):
-    
-    # print(list(data))
-
     self.joint_1_actual = float(data.data[0])
     self.joint_3_actual = float(data.data[1])
     self.joint_4_actual = float(data.data[2])

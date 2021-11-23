@@ -45,7 +45,7 @@ class image_converter:
     # initialize 2 subscribers to get img data
     self.image_sub = rospy.Subscriber("/camera1/robot/image_raw",Image,self.callback1)
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw", Image, self.callback2)
-    # self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
+    self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
     
     # maybe no need
 
@@ -79,7 +79,7 @@ class image_converter:
 
     
   def getActual(self,data):
-    self.joint_1_actual = float(data.data[0])
+    self.joint_2_actual = float(data.data[0])
     self.joint_3_actual = float(data.data[1])
     self.joint_4_actual = float(data.data[2])
 
@@ -343,7 +343,14 @@ class image_converter:
     self.joint_angle_3.publish(self.joint3)
     self.joint_angle_4.publish(self.joint4)
     
-    
+    self.error2,self.error3,self.error4 = Float64(),Float64(),Float64()
+    self.error2.data = abs(self.j1-self.joint_2_actual)
+    self.error3.data = abs(self.j3-self.joint_3_actual)
+    self.error4.data = abs(self.j4-self.joint_4_actual)
+
+    self.joint_2_error.publish(self.error1)
+    self.joint_3_error.publish(self.error3)
+    self.joint_4_error.publish(self.error4)
     
 
 
