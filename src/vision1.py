@@ -250,7 +250,8 @@ class image_converter:
 
 
     if np.count_nonzero(self.prevNY) >=self.dequelength/2: 
-      y = self.closestYRoot(A,C,x)  
+      y = np.arcsin(self.bound(A/np.cos(x)))
+      # y = self.closestYRoot(A,C,x)  
     # Begin detection by using quadrant 1 solution
     else: 
       y = np.arcsin(self.bound(A/np.cos(x)))
