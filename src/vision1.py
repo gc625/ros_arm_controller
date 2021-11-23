@@ -228,7 +228,7 @@ class image_converter:
     return y
 
 
-  def angles_rotMat(self,prev,cur,self.hasMissing):
+  def angles_rotMat(self,prev,cur,hasMissing):
     
     a,b,c = prev[0],prev[1],prev[2]
     A,B,C = cur[0],cur[1],self.bound(cur[2])
