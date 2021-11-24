@@ -24,21 +24,12 @@ class forward_kin:
 
   def callback1(self, data):
     self.joint1 = float(data.data)
-    print('xxx')
-    print(self.joint1)
-    print('xxx')
 
   def callback2(self, data):
-    self.joint_3 = float(data.data)
-    print('yyy')
-    print(self.joint_3)
-    print('yyy')
+    self.joint3 = float(data.data)
 
   def callback3(self, data):
-    self.joint_4 = float(data.data)
-    print('zzz')
-    print(self.joint_4)
-    print('zzz')
+    self.joint4 = float(data.data)
 
   def makeMatrix(d, t, r, a):
       M = np.matrix([
