@@ -31,12 +31,14 @@ class forward_kin:
   def callback3(self, data):
     self.joint4 = float(data.data)
 
-    self.m1 = self.makeMatrix(4, self.joint1 + (-np.pi / 2), 0, (-np.pi / 2))
-    self.m2 = self.makeMatrix(0, self.joint3 + (-np.pi / 2), 3.2, (np.pi / 2))
+    self.m1 = self.makeMatrix(4, self.joint1 + (-np.pi / 2), 0, (np.pi / 2))
+    self.m2 = self.makeMatrix(0, self.joint3 + (np.pi / 2), 3.2, (np.pi / 2))
     self.m3 = self.makeMatrix(0, self.joint4, 2.8, 0)
 
     self.finalFk = (self.m1 * self.m2 * self.m3)
-
+    print('ja1: ',self.joint1)
+    print('ja3: ',self.joint3)
+    print('ja4: ',self.joint4) 
     print(self.finalFk)
 
   def makeMatrix(self, d, t, r, a):
