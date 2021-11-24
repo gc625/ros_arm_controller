@@ -18,12 +18,12 @@ class forward_kin:
   def __init__(self):
     # initialize the node named image_processing
     rospy.init_node('forward_kinematics', anonymous=True)
-    self.joint_1 = rospy.Subscriber("joints_angle_1", Float64, self.callback1)
-    self.joint_3 = rospy.Subscriber("joints_angle_3", Float64, self.callback2)
-    self.joint_4 = rospy.Subscriber("joints_angle_4", Float64, self.callback3)
+    self.joint_1 = rospy.Subscriber("joint_angle_1", Float64, self.callback1)
+    self.joint_3 = rospy.Subscriber("joint_angle_3", Float64, self.callback2)
+    self.joint_4 = rospy.Subscriber("joint_angle_4", Float64, self.callback3)
 
   def callback1(self, data):
-    self.joint1 = float(data.data[0])
+    self.joint1 = float(data.data)
     print('xxx')
     print(self.joint1)
     print('xxx')
@@ -39,14 +39,6 @@ class forward_kin:
     print('zzz')
     print(self.joint_4)
     print('zzz')
-
-    #self.m1 = self.makeMatrix(4, self.joint_1 + (-np.pi / 2), 0, -np.pi / 2)
-    #self.m2 = self.makeMatrix(0, self.joint_3 + (-np.pi / 2), 3.2, (np.pi / 2))
-    #self.m3 = self.makeMatrix(0, self.joint_4, 2.8, 0)
-
-    #self.finalFk = (self.m1 * self.m2 * self.m3)
-
-    #print(self.finalFk)
 
   def makeMatrix(d, t, r, a):
       M = np.matrix([
