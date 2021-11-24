@@ -14,7 +14,7 @@ import math
 
 class forward_kin:
 
-  # Defines publisher and subscriber
+  # Defines subscriber
   def __init__(self):
     # initialize the node named image_processing
     rospy.init_node('forward_kinematics', anonymous=True)
