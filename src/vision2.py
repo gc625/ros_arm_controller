@@ -35,7 +35,7 @@ class image_converter:
     self.joint_1_error = rospy.Publisher("joint_1_error",Float64, queue_size=10)
     self.joint_3_error = rospy.Publisher("joint_3_error",Float64, queue_size=10)
     self.joint_4_error = rospy.Publisher("joint_4_error",Float64, queue_size=10)
-    self.ee_center_pos = rospy.Publisher("ee_center", Float64, queue_size=10) 
+    self.ee_center_pos = rospy.Publisher("ee_center", Float64, queue_size=10)
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
@@ -159,7 +159,7 @@ class image_converter:
     combined[2] = pixel2meter * combined[2]
     combined[3] = pixel2meter * combined[3]
     print('new ---',combined)
-    self.ee_center_pos.publish(combined[3])
+    #self.ee_center_pos.publish(combined[3])
     return combined
 
   '''
