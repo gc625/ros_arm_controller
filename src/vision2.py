@@ -153,7 +153,11 @@ class image_converter:
         combined.append(np.array((self.prevCenters[i][0],yz[i][0],yz[i][1])))
       else:
         combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+yz[i][1])/2)))
-    print('---',combined)
+    print('old ---',combined)    
+    combined[1] = (4 / (np.sqrt((np.sum((combined[1] - combined[0])**2))))) * combined[1]
+    combined[2] = (3.2 / (np.sqrt((np.sum((combined[2] - combined[1]) ** 2))))) * combined[2] + combined[1]
+    combined[3] = (2.8 / (np.sqrt((np.sum((combined[3] - combined[2]) ** 2))))) * combined[3] + combined[2]
+    print('new ---',combined)
     self.ee_center_pos.publish(combined[3])
     return combined
 
