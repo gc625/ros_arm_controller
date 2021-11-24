@@ -68,17 +68,19 @@ class image_converter:
     self.Xslope = 0
     self.Ypred = 0
     self.Yslope = 0
-    self.sign = 1 
-    self.ySign = 1 
+
+    
+    self.counter = 1
+    self.j1sum = 0 
+    self.j3sum = 0
+    self.j4sum = 0
+
     
     self.joint_1_actual = 0.
     self.joint_3_actual = 0.
     self.joint_4_actual = 0.
 
   def getActual(self,data):
-    
-    # print(list(data))
-
     self.joint_1_actual = float(data.data[0])
     self.joint_3_actual = float(data.data[1])
     self.joint_4_actual = float(data.data[2])
@@ -363,7 +365,13 @@ class image_converter:
     self.joint_1_error.publish(self.error1)
     self.joint_3_error.publish(self.error3)
     self.joint_4_error.publish(self.error4)
-
+    
+    self.j1sum += abs(self.j1-self.joint_1_actual)
+    self.j3sum += abs(self.j3-self.joint_3_actual)
+    self.j4sum += abs(self.j4-self.joint_4_actual)
+    
+    print(rospy.get_time(),":", self.j1sum/self.counter, self.j3sum/self.counter,self.j4sum/self.counter)
+    self.counter += 1
     # self.predZ = Float64()
     # self.predZ.data= self.Zpred
     # self.predictedZ.publish(self.predZ)

@@ -17,27 +17,31 @@ class joint_pub:
     robot_joint1_pub = rospy.Publisher("/robot/joint1_position_controller/command", Float64, queue_size=10)
     robot_joint2_pub = rospy.Publisher("/robot/joint2_position_controller/command", Float64, queue_size=10)
     robot_joint3_pub = rospy.Publisher("/robot/joint3_position_controller/command", Float64, queue_size=10)
-    robot_joint4_pub = rospy.Publisher("/robot/joint4_position_controller/command", Float64, queue_size=10)
+    robot_joint3_pub = rospy.Publisher("/robot/joint4_position_controller/command", Float64, queue_size=10)
     rate = rospy.Rate(50)  # 50hz
     # initialize a publisher for end effector target positions
-    robot_joints_pub = rospy.Publisher("joints_actual", Float64MultiArray, queue_size=10)
+    target_pos_pub = rospy.Publisher("target_pos", Float64MultiArray, queue_size=10)
     joint_time = rospy.Publisher("time", Float64, queue_size=10)
 
     bag = rosbag.Bag('test.bag', 'w')
-    print(rospy.get_time())
-    rospy.get_time()
+
     t0 = rospy.get_time()	
     
-    
+    isFirst = True
+
     while not rospy.is_shutdown():
-      for i in ((x/50) for x in range(int(0*50)+1, int(120*50)+1)):
+        if isFirst:
+            t0 = rospy.get_time() - t0
+            isFirst = False
+        print(t0)   
+        
         rospy.get_time()
         cur_time = rospy.get_time() - t0
-        print(cur_time,":",i)
+        print(cur_time)
         #y_d = float(6 + np.absolute(1.5* np.sin(cur_time * np.pi/100)))
-        j2 = np.pi * 0.5 * np.sin(i * np.pi / 15)
-        j3 = np.pi * 0.5 * np.sin(i * np.pi / 20) 
-        j4 = np.pi * 0.5 * np.sin(i * np.pi / 18) 
+        j2 = np.pi * 0.5 * np.sin(cur_time * np.pi / 15)
+        j3 = np.pi * 0.5 * np.sin(cur_time * np.pi / 20) 
+        j4 = np.pi * 0.5 * np.sin(cur_time * np.pi / 18) 
         
 	
         joint2=Float64()
@@ -51,14 +55,15 @@ class joint_pub:
 	
         joint_angles = Float64MultiArray()
         joint_angles.data = np.array([j2, j3, j4])
-      
+        bag.write('joint2',joint2)
+        bag.write('joint3',joint3)
+        bag.write('joint4',joint4)
+        bag.write('time', runtime)
         
-        robot_joints_pub.publish(joint_angles)
-
-        robot_joint2_pub.publish(joint2)
-        robot_joint3_pub.publish(joint3)
-        robot_joint4_pub.publish(joint4)
-
+        joint_time.publish(runtime)
+        robot_joint1_pub.publish(joint2)
+        robot_joint2_pub.publish(joint3)
+        robot_joint3_pub.publish(joint4)
         rate.sleep()
         #if (cur_time >= 10):
          #   rospy.signal_shutdown("time passed")

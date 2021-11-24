@@ -45,7 +45,7 @@ class image_converter:
     # initialize 2 subscribers to get img data
     self.image_sub = rospy.Subscriber("/camera1/robot/image_raw",Image,self.callback1)
     self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw", Image, self.callback2)
-    # self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
+    self.actual_joints = rospy.Subscriber("joints_actual",Float64MultiArray,self.getActual)
     
     # maybe no need
 
@@ -71,7 +71,10 @@ class image_converter:
     self.Y2slope = 0
     self.Y2pred = 0
 
-
+    self.counter = 1
+    self.j2sum = 0 
+    self.j3sum = 0
+    self.j4sum = 0
     self.joint_2_actual = 0.
     self.joint_3_actual = 0.
     self.joint_4_actual = 0.
@@ -79,7 +82,7 @@ class image_converter:
 
     
   def getActual(self,data):
-    self.joint_1_actual = float(data.data[0])
+    self.joint_2_actual = float(data.data[0])
     self.joint_3_actual = float(data.data[1])
     self.joint_4_actual = float(data.data[2])
 
@@ -321,7 +324,7 @@ class image_converter:
     normVecs = self.calcNormVecs(centers)
     
     self.j2,self.j3 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
-    print(normVecs[1])
+#    print(normVecs[1])
     self.j4 = self.angle_fromdot(normVecs[1],normVecs[2])
 
 
@@ -343,10 +346,21 @@ class image_converter:
     self.joint_angle_3.publish(self.joint3)
     self.joint_angle_4.publish(self.joint4)
     
-    
-    
+    self.error2,self.error3,self.error4 = Float64(),Float64(),Float64()
+    self.error2.data = abs(self.j2-self.joint_2_actual)
+    self.error3.data = abs(self.j3-self.joint_3_actual)
+    self.error4.data = abs(self.j4-self.joint_4_actual)
 
-
+    self.joint_2_error.publish(self.error2)
+    self.joint_3_error.publish(self.error3)
+    self.joint_4_error.publish(self.error4)
+    
+    self.j2sum += abs(self.j2-self.joint_2_actual)
+    self.j3sum += abs(self.j3-self.joint_3_actual)
+    self.j4sum += abs(self.j4-self.joint_4_actual)
+    
+    print(rospy.get_time(),":", self.j2sum/self.counter, self.j3sum/self.counter,self.j4sum/self.counter)
+    self.counter += 1
     # Publish the results
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_image2, "bgr8"))
