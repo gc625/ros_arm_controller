@@ -36,11 +36,14 @@ class forward_kin:
     self.m3 = self.makeMatrix(0, self.joint4, 2.8, 0)
 
     self.finalFk = (self.m1 * self.m2 * self.m3)
-    print('ja1: ',self.joint1)
-    print('ja3: ',self.joint3)
-    print('ja4: ',self.joint4) 
-    print(self.finalFk)
-
+    #print('ja1: ',self.joint1)
+    #print('ja3: ',self.joint3)
+    #print('ja4: ',self.joint4)
+    self.x_val = self.finalFk[0].item(3)
+    self.y_val = self.finalFk[1].item(3)
+    self.z_val = self.finalFk[2].item(3)
+    self.ee_pos = np.array([self.x_val, self.y_val, self.z_val])
+    print('End effector estimated pos: ', self.ee_pos)
   def makeMatrix(self, d, t, r, a):
       M = np.matrix([
        [np.cos(t), -np.sin(t) * np.cos(a), np.sin(t) * np.sin(a), r * np.cos(t)],
