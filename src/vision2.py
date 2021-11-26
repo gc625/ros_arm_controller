@@ -35,6 +35,7 @@ class image_converter:
     self.joint_1_error = rospy.Publisher("joint_1_error",Float64, queue_size=10)
     self.joint_3_error = rospy.Publisher("joint_3_error",Float64, queue_size=10)
     self.joint_4_error = rospy.Publisher("joint_4_error",Float64, queue_size=10)
+    self.ee_center_pos = rospy.Publisher("ee_center", Float64, queue_size=10)
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
@@ -139,6 +140,7 @@ class image_converter:
 
     for i in range(len(centers)):
       centers[i] = np.array([centers[i][0] - newX, -1 * (centers[i][1] - newY)])
+      
     return centers,missing 
 
   def combine(self,yz,not_here1,xz,not_here2):
@@ -151,7 +153,13 @@ class image_converter:
         combined.append(np.array((self.prevCenters[i][0],yz[i][0],yz[i][1])))
       else:
         combined.append(np.array((xz[i][0],yz[i][0],(xz[i][1]+yz[i][1])/2)))
-	
+    print('old ---',combined)    
+    pixel2meter = 4 / (combined[1][2] - combined[0][2])
+    combined[1] = pixel2meter * combined[1]
+    combined[2] = pixel2meter * combined[2]
+    combined[3] = pixel2meter * combined[3]
+    print('new ---',combined)
+    #self.ee_center_pos.publish(combined[3])
     return combined
 
   '''
