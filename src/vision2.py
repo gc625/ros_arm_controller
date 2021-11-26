@@ -35,7 +35,9 @@ class image_converter:
     self.joint_1_error = rospy.Publisher("joint_1_error",Float64, queue_size=10)
     self.joint_3_error = rospy.Publisher("joint_3_error",Float64, queue_size=10)
     self.joint_4_error = rospy.Publisher("joint_4_error",Float64, queue_size=10)
-    self.ee_center_pos = rospy.Publisher("ee_center", Float64, queue_size=10)
+    self.ee_center_pos_x = rospy.Publisher("ee_x", Float64, queue_size=10)
+    self.ee_center_pos_y = rospy.Publisher("ee_y", Float64, queue_size=10)
+    self.ee_center_pos_z = rospy.Publisher("ee_z", Float64, queue_size=10)
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
     # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
@@ -159,7 +161,9 @@ class image_converter:
     combined[2] = pixel2meter * combined[2]
     combined[3] = pixel2meter * combined[3]
     print('new ---',combined)
-    #self.ee_center_pos.publish(combined[3])
+    self.ee_center_pos_x.publish(combined[3].item(0))
+    self.ee_center_pos_y.publish(combined[3].item(1))
+    self.ee_center_pos_z.publish(combined[3].item(2))
     return combined
 
   '''
@@ -344,28 +348,11 @@ class image_converter:
 
     centersXZ,not_here_2 = self.detect_centers(self.cv_image2)
     centersYZ,not_here_1 = self.detect_centers(self.cv_image1)
-    
+
     self.hasMissing = np.any(not_here_1) == True or np.any(not_here_2) ==True
     centers = self.combine(centersYZ,not_here_1,centersXZ,not_here_2)
     self.prevCenters = centers
-    
-    print("j1,j2",centers[0],centers[1])
-    print("j2,j3",centers[1],centers[2])
-    print("j3,j4",centers[2],centers[3])
-    
-    a = np.sqrt(np.sum((centers[1]-centers[0])**2))
-    b = np.sqrt(np.sum((centers[2]-centers[1])**2))
-    c = np.sqrt(np.sum((centers[3]-centers[2])**2))
-    
-    
-#    print(centers[3])
-    print(4/a,3.2/b,2.8/c)
-    
-    print(centers[3]*(4/a))
-    print(centers[3]*(3.2/b))
-    print(centers[3]*(2.8/c))
-    ()
-    
+
     normVecs = self.calcNormVecs(centers)
 
     self.j3,self.j1 = self.angles_rotMat([0.,0.,1.],normVecs[1],self.hasMissing)
@@ -395,7 +382,7 @@ class image_converter:
     self.j3sum += abs(self.j3-self.joint_3_actual)
     self.j4sum += abs(self.j4-self.joint_4_actual)
     
-#    print(rospy.get_time(),":", self.j1sum/self.counter, self.j3sum/self.counter,self.j4sum/self.counter)
+    #print(rospy.get_time(),":", self.j1sum/self.counter, self.j3sum/self.counter,self.j4sum/self.counter)
     self.counter += 1
     # self.predZ = Float64()
     # self.predZ.data= self.Zpred
