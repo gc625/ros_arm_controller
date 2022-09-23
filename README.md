@@ -1,3 +1,5 @@
-# ivr_assignment
+# Robot Arm Controller
 
-src folder contains vision1.py, vision2.py, control.py that was submitted, along with other test files
+This repo contains a stereo camera inverse kinematic control algorithm. 
+
+
