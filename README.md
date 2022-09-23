@@ -22,4 +22,5 @@ For the following results, joint 2 was fixed while joints 1,3,4 are programmed t
 # Error rates
 ![](docs/t2error.png)
 
+![](docs/error_table.png)
 
