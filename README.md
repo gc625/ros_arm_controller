@@ -2,8 +2,7 @@
 
 This repo contains a stereo camera inverse kinematic control algorithm. 
 
-$$ 
-\begin{algorithm}
+$$\begin{algorithm}
 \
 \caption{calculates $\theta$ with linear regression smoothing }
 \begin{algorithmic} [1]
@@ -35,5 +34,4 @@ $$
 \algstore{myalg}
 
 \end{algorithmic}
-\end{algorithm}
-$$
+\end{algorithm}$$
